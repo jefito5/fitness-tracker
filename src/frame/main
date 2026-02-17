@@ -1,0 +1,9 @@
+package frame;
+
+import gui.MealUD;
+
+public class main {
+    public static void main(String[] args) {
+        new MealUD();
+    }
+}
