@@ -1,20 +1,11 @@
 package models;
 
 public class User {
-    
-    private int id;
+	private int id;
 	private String name;
 	private String gender;
 	private int age;
 	private String password;
-
-    public User(int id, String name, String gender, int age, String password) {
-        this.id = id;
-        this.name = name;
-        this.gender = gender;
-        this.age = age;
-        this.password = password;
-    }
 	
 	public String getPassword() {
 		return password;
@@ -45,5 +36,5 @@ public class User {
 	}
 	public void setAge(int age) {
 		this.age = age;
-	}
+	}		
 }
