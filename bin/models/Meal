@@ -10,4 +10,22 @@ public class Meal {
         this.grams = grams;
         this.caloriesPerGram = caloriesPerGram;
     }
+    public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getMealName() {
+		return mealName;
+	}
+	public void setMealName(String mealName) {
+		this.mealName = mealName;
+	}
+	public double getCalorie() {
+		return caloriesPerGram;
+	}
+	public void setcaloriesPerGram(double caloriesPerGram) {
+		this.caloriesPerGram = caloriesPerGram;
+	}
 }
