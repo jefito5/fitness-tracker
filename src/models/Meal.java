@@ -3,7 +3,7 @@ package models;
 public class Meal {
 	private int id;
 	private String mealName;
-	private double calories;
+	private double caloriesPerGram;
 	
 	public int getId() {
 		return id;
@@ -20,7 +20,7 @@ public class Meal {
 	public double getCalories() {
 		return calories;
 	}
-	public void setCalories(double calories) {
-		this.calories = calories;
+	public void setcaloriesPerGram(double caloriesPerGram) {
+		this.caloriesPerGram = caloriesPerGram;
 	}	
 }
