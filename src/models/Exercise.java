@@ -4,12 +4,6 @@ public class Exercise {
 	private int id;
 	private String exerciseName;
 	private double calorieburn;
-  public Exercise(int id, String exerciseName, double calorieburn)
-  {
-    this.id = id;
-    this.exerciseName = exerciseName;
-    this.calorieburn = calorieburn;
-  }
 	
 	public int getId() {
 		return id;
