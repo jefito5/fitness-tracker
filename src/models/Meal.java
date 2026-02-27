@@ -17,8 +17,8 @@ public class Meal {
 	public void setMealName(String mealName) {
 		this.mealName = mealName;
 	}
-	public double getCalories() {
-		return calories;
+	public double getcaloriesPerGram() {
+		return caloriesPerGram;
 	}
 	public void setcaloriesPerGram(double caloriesPerGram) {
 		this.caloriesPerGram = caloriesPerGram;
