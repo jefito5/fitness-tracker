@@ -3,7 +3,7 @@ package models;
 public class Meal {
 	private int id;
 	private String mealName;
-	private double calorie;
+	private double calories;
 	
 	public int getId() {
 		return id;
@@ -17,10 +17,10 @@ public class Meal {
 	public void setMealName(String mealName) {
 		this.mealName = mealName;
 	}
-	public double getCalorie() {
-		return calorie;
+	public double getCalories() {
+		return calories;
 	}
-	public void setCalorie(double calorie) {
-		this.calorie = calorie;
+	public void setCalories(double calories) {
+		this.calories = calories;
 	}	
 }
