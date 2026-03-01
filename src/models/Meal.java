@@ -25,7 +25,7 @@ public class Meal {
 	public double getcaloriesPerGram() {
 		return caloriesPerGram;
 	}
-	public void setcaloriesPerGram(double caloriesPerGram) {
+	public void setCalorie(double caloriesPerGram) {
 		this.caloriesPerGram = caloriesPerGram;
 	}
 }
