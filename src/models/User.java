@@ -7,6 +7,8 @@ public class User {
 	private int age;
 	private String password;
 	
+	public User(){}
+	
 	public String getPassword() {
 		return password;
 	}
