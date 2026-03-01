@@ -1,26 +1,31 @@
 package models;
 
 public class Meal {
-	private int id;
-	private String mealName;
-	private double caloriesPerGram;
-	
-	public int getId() {
-		return id;
-	}
-	public void setId(int id) {
-		this.id = id;
-	}
-	public String getMealName() {
-		return mealName;
-	}
-	public void setMealName(String mealName) {
-		this.mealName = mealName;
+    private String name;
+    private double grams;
+    private double caloriesPerGram;
+
+	public Meal(){}
+    public Meal(String name, double grams, double caloriesPerGram) {
+        this.name = name;
+        this.grams = grams;
+        this.caloriesPerGram = caloriesPerGram;
+    }
+    public String getName() {
+        return name;
+    }
+
+    public double getGrams() {
+        return grams;
+    }
+
+    public void setMealName(String mealName) {
+		this.name = mealName;
 	}
 	public double getcaloriesPerGram() {
 		return caloriesPerGram;
 	}
 	public void setcaloriesPerGram(double caloriesPerGram) {
 		this.caloriesPerGram = caloriesPerGram;
-	}	
+	}
 }
