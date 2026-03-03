@@ -15,7 +15,7 @@ public class MealDB {
             );
             ps.setString(1, meal.getName());
             ps.setDouble(2, meal.getGrams());
-            ps.setDouble(3, meal.getCaloriesPerGram());
+            ps.setDouble(3, meal.getcaloriesPerGram());
             ps.execute();
         } catch (Exception e) {
             e.printStackTrace();
