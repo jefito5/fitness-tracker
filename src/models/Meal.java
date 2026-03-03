@@ -22,10 +22,10 @@ public class Meal {
     public void setMealName(String mealName) {
 		this.name = mealName;
 	}
-	public double getcaloriesPerGram() {
+	public double getCaloriesPerGram() {
 		return caloriesPerGram;
 	}
-	public void setcaloriesPerGram(double caloriesPerGram) {
+	public void setCaloriesPerGram(double caloriesPerGram) {
 		this.caloriesPerGram = caloriesPerGram;
 	}
 }

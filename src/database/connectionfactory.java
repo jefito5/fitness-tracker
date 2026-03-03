@@ -12,8 +12,7 @@ public class ConnectionFactory {
             Class.forName("org.sqlite.JDBC");
             return DriverManager.getConnection(URI);
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Nepavyko prisijungti prie DB: " + e.getMessage());
         }
     }
 }
