@@ -4,7 +4,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.MatteBorder;
 
-import gui.MealIUD.InsertMealListener.InsertExerciseListener;
+//import gui.MealIUD.InsertMealListener.InsertExerciseListener;
 import impl.ExerciseDB;
 import impl.MealDB;
 import impl.UserDB;
