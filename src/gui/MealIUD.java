@@ -225,9 +225,9 @@ public class MealIUD {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			/*int asd=Integer.parseInt(textField.getText());
-			new trackProgress(asd);*/
-			//System.out.println(textField.getText());
+			int asd=Integer.parseInt(textField.getText());
+			new trackProgress(asd);
+			System.out.println(textField.getText());
 			frame.setVisible(false);
 			
 		}
@@ -273,7 +273,7 @@ public class MealIUD {
 			m.setCaloriesPerGram(text_2);
 			
 			MealDB udb=new MealDB();
-			udb.insert(m);
+			udb.insertMeal(m);
 			//int rowUpdate= udb.insert(m);
 			//if(rowUpdate>0){
 			JOptionPane.showMessageDialog(null, "Meal Added!");	
@@ -310,7 +310,7 @@ public class MealIUD {
 			ee.setCalorieburn(text_2);
 			
 			ExerciseDB udb=new ExerciseDB();
-			udb.insert(ee);
+			udb.insertExercise(ee);
 			/*int rowUpdate= udb.insertExercise(ee);
 			if(rowUpdate>0){
 			JOptionPane.showMessageDialog(null, "Exercise Added!");	

@@ -1,78 +1,121 @@
 package impl;
 
-import database.ConnectionFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.List;
+
+import database.ConnectionFactory;
+import database.ImealDB;
 import models.Meal;
 
-public class MealDB {
 
-    public void insert(Meal meal) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement(
-                "INSERT INTO meals (name, grams, calories) VALUES (?, ?, ?)"
-            );
-            ps.setString(1, meal.getName());
-            ps.setDouble(2, meal.getGrams());
-            ps.setDouble(3, meal.getCaloriesPerGram());
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+public class MealDB implements ImealDB{
+	
+	private Connection conn;
+	public MealDB(){
+		conn=ConnectionFactory.getConnection();
+	}
+	@Override
+	public int insertMeal(Meal m) {
+		String sql="insert into meals(MealName,CaloriePerGram) values(?,?)";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			pstmt.setString(1, m.getName());
+			pstmt.setDouble(2, m.getCaloriesPerGram());
+			
+			if(pstmt.executeUpdate()>0){
+				ResultSet rs=pstmt.getGeneratedKeys();
+				
+				if(rs.next())
+					return rs.getInt(1);
 
-    public List<Meal> getAll() {
-        List<Meal> list = new ArrayList<>();
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement("SELECT * FROM meals");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Meal meal = new Meal(
-                    rs.getString("name"),
-                    rs.getDouble("grams"),
-                    rs.getDouble("calories")
-                );
-                list.add(meal);
-            }
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
+			}
+			
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	@Override
+	public int updateMeal(Meal m) {
+		String sql="update meals set MealName=?,CaloriePerGram=? where id=?";
+		try{
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(3, m.getId());
+			pstmt.setString(1, m.getName());
+			pstmt.setDouble(2, m.getCaloriesPerGram());
+	
+			
+			return pstmt.executeUpdate();
+			
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	@Override
+	public int deleteMeal(Meal m) {
+		String sql="delete from meals where id=?";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, m.getId());
+			return pstmt.executeUpdate();
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	@Override
+	public ArrayList<Meal> getAll() {
+		
+		ArrayList<Meal> meals=new ArrayList<>();
+		String sql="select * from meals";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			ResultSet rs=pstmt.executeQuery();
+			
+			while(rs.next()){
+				Meal m =new Meal();
+				m.setId(rs.getInt("id"));
+				m.setMealName(rs.getString("name"));
+				m.setCaloriesPerGram(rs.getDouble("calories"));
+				meals.add(m);
+				
+			}
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return meals;
+		
+	}
+	@Override
+	public Meal getById(int mealID) {
+		String sql="select * from meals where id=?";
+		Meal m =new Meal();
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, mealID);  //make this int later
+			ResultSet rs=pstmt.executeQuery();
+			
+			if(rs.next()){
+				m.setId(rs.getInt("id"));
+				m.setMealName(rs.getString("MealName"));
+				m.setCaloriesPerGram((rs.getDouble("CaloriePerGram")));	
+			}	
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return m;
+	}
 
-    public void update(String name, Meal meal) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement(
-                "UPDATE meals SET name = ?, grams = ?, calories = ? WHERE name = ?"
-            );
-            ps.setString(1, meal.getName());
-            ps.setDouble(2, meal.getGrams());
-            ps.setDouble(3, meal.getCaloriesPerGram());
-            ps.setString(4, name);
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    public void delete(String name) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement("DELETE FROM meals WHERE name = ?");
-            ps.setString(1, name);
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+
 }

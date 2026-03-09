@@ -1,95 +1,118 @@
 package impl;
 
-import database.ConnectionFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.List;
+import database.ConnectionFactory;
+import database.IexerciseDB;
 import models.Exercise;
 
-public class ExerciseDB {
+public class ExerciseDB implements IexerciseDB {
+	private Connection conn;
+	public ExerciseDB(){
+		conn=ConnectionFactory.getConnection();
+	}
+	@Override
+	public int insertExercise(Exercise ee) {
+		String sql="insert into exercise(ExerciseName,CalorieburnPerMin) values(?,?)";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			pstmt.setString(1, ee.getExerciseName());
+			pstmt.setDouble(2, ee.getCalorieburn());
+			
+			if(pstmt.executeUpdate()>0){
+				ResultSet rs=pstmt.getGeneratedKeys();
+				
+				if(rs.next())
+					return rs.getInt(1);
 
-    public void insert(Exercise exercise) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement(
-                "INSERT INTO exercises (exerciseName, calorieburn) VALUES (?, ?)"
-            );
-            ps.setString(1, exercise.getExerciseName());
-            ps.setDouble(2, exercise.getCalorieburn());
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+			}
+			
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		return 0;
+	}
 
-    public List<Exercise> getAll() {
-        List<Exercise> list = new ArrayList<>();
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement("SELECT * FROM exercises");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Exercise ex = new Exercise();
-                ex.setId(rs.getInt("id"));
-                ex.setExerciseName(rs.getString("exerciseName"));
-                ex.setCalorieburn(rs.getDouble("calorieburn"));
-                list.add(ex);
-            }
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
+	@Override
+	public int updateExercise(Exercise ee) {
+		String sql="update exercise set ExerciseName=?,CalorieBurnPerMin=? where id=?";
+		try{
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(3, ee.getId());
+			pstmt.setString(1, ee.getExerciseName());
+			pstmt.setDouble(2, ee.getCalorieburn());
+	
+			
+			return pstmt.executeUpdate();
+			
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return 0;
+	}
 
-    public Exercise getById(int id) {
-        Exercise ex = null;
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement("SELECT * FROM exercises WHERE id = ?");
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                ex = new Exercise();
-                ex.setId(rs.getInt("id"));
-                ex.setExerciseName(rs.getString("exerciseName"));
-                ex.setCalorieburn(rs.getDouble("calorieburn"));
-            }
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return ex;
-    }
+	@Override
+	public int deleteExercise(Exercise ee) {
+		String sql="delete from exercise where id=?";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, ee.getId());
+			return pstmt.executeUpdate();
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return 0;
+	}
 
-    public void update(Exercise exercise) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement(
-                "UPDATE exercises SET exerciseName = ?, calorieburn = ? WHERE id = ?"
-            );
-            ps.setString(1, exercise.getExerciseName());
-            ps.setDouble(2, exercise.getCalorieburn());
-            ps.setInt(3, exercise.getId());
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+	@Override
+	public ArrayList<Exercise> getExercise() {
+		ArrayList<Exercise> exercises=new ArrayList<>();
+		String sql="select * from exercise";
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			ResultSet rs=pstmt.executeQuery();
+			
+			while(rs.next()){
+				Exercise ee =new Exercise();
+				ee.setId(rs.getInt("id"));
+				ee.setExerciseName(rs.getString("ExerciseName"));
+				ee.setCalorieburn(rs.getDouble("CalorieBurn"));
+				exercises.add(ee);
+				
+			}
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return exercises;
+	}
 
-    public void delete(int id) {
-        try {
-            Connection c = ConnectionFactory.getConnection();
-            PreparedStatement ps = c.prepareStatement("DELETE FROM exercises WHERE id = ?");
-            ps.setInt(1, id);
-            ps.execute();
-            c.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+
+	@Override
+	public Exercise getById(int exerciseID) {
+		String sql="select * from exercise where id=?";
+		Exercise ee =new Exercise();
+		try{
+			PreparedStatement pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, exerciseID);  //make this int later
+			ResultSet rs=pstmt.executeQuery();
+			
+			if(rs.next()){
+				ee.setId(rs.getInt("id"));
+				ee.setExerciseName(rs.getString("ExerciseName"));
+				ee.setCalorieburn(rs.getInt("CalorieBurnPerMin"));
+					
+			}
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+		return ee;
+	}
 }

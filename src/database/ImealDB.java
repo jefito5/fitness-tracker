@@ -13,6 +13,6 @@ int updateMeal(Meal m);
 
 int deleteMeal(Meal m);
 
-ArrayList<Meal> getMeal();
+ArrayList<Meal> getAll();
 	
 }

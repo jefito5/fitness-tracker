@@ -1,6 +1,7 @@
 package models;
 
 public class Meal {
+    private int id;
     private String name;
     private double grams;
     private double caloriesPerGram;
@@ -11,6 +12,12 @@ public class Meal {
         this.grams = grams;
         this.caloriesPerGram = caloriesPerGram;
     }
+    public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
     public String getName() {
         return name;
     }
