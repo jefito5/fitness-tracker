@@ -39,7 +39,7 @@ public class ExerciseDB implements IexerciseDB {
 
 	@Override
 	public int updateExercise(Exercise ee) {
-		String sql="update exercise set ExerciseName=?,CalorieBurnPerMin=? where id=?";
+		String sql="update exercise set ExerciseName=?,CalorieburnPerMin=? where id=?";
 		try{
 			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.setInt(3, ee.getId());
@@ -82,7 +82,7 @@ public class ExerciseDB implements IexerciseDB {
 				Exercise ee =new Exercise();
 				ee.setId(rs.getInt("id"));
 				ee.setExerciseName(rs.getString("ExerciseName"));
-				ee.setCalorieburn(rs.getDouble("CalorieBurn"));
+				ee.setCalorieburn(rs.getDouble("CalorieburnPerMin"));
 				exercises.add(ee);
 				
 			}
@@ -106,7 +106,7 @@ public class ExerciseDB implements IexerciseDB {
 			if(rs.next()){
 				ee.setId(rs.getInt("id"));
 				ee.setExerciseName(rs.getString("ExerciseName"));
-				ee.setCalorieburn(rs.getInt("CalorieBurnPerMin"));
+				ee.setCalorieburn(rs.getInt("CalorieburnPerMin"));
 					
 			}
 		}

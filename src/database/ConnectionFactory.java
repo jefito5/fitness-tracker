@@ -1,59 +1,67 @@
 package database;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 public class ConnectionFactory {
 
     private static final String URI = "jdbc:sqlite:fitness.db";
+    private static Connection conn;
 
-    public static Connection getConnection() {
+    private ConnectionFactory() {
         try {
             Class.forName("org.sqlite.JDBC");
-            return DriverManager.getConnection(URI);
-        } catch (Exception e) {
-            throw new RuntimeException("Nepavyko prisijungti prie DB: " + e.getMessage());
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Klaida: Nerastas SQLite tvarkyklės failas!");
+            ex.printStackTrace();
         }
     }
 
-    public static void initializeDatabase() {
+    public static Connection getConnection() {
+        if (conn == null) {
+            try {
+                new ConnectionFactory();
+                conn = DriverManager.getConnection(URI);
+                createTablesFromFile();
+            } catch (SQLException ex) {
+                System.out.println("Nepavyko prisijungti prie DB!");
+                ex.printStackTrace();
+            }
+        }
+        return conn;
+    }
+
+    private static void createTablesFromFile() {
         try {
-            Connection c = getConnection();
-            Statement stmt = c.createStatement();
-
-            stmt.execute(
-                "CREATE TABLE IF NOT EXISTS users (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "name TEXT NOT NULL, " +
-                "gender TEXT, " +
-                "age INTEGER, " +
-                "password TEXT" +
-                ")"
-            );
-
-            stmt.execute(
-                "CREATE TABLE IF NOT EXISTS meals (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "name TEXT NOT NULL, " +
-                "grams REAL, " +
-                "calories REAL" +
-                ")"
-            );
-
-            stmt.execute(
-                "CREATE TABLE IF NOT EXISTS exercises (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "exerciseName TEXT NOT NULL, " +
-                "calorieburn REAL" +
-                ")"
-            );
-
-            c.close();
-            System.out.println("Database connected and tables created successfully!");
+            String sqlContent = Files.readString(Paths.get("src/DBtables.sql"));
+            String[] sqlCommands = sqlContent.split(";");
+            
+            Statement stmt = conn.createStatement();
+            
+            for (String command : sqlCommands) {
+                if (!command.trim().isEmpty()) {
+                    stmt.execute(command);
+                }
+            }
+            System.out.println(">>> Lentelės sėkmingai sukurtos iš DBtables.sql failo! <<<");
+            
         } catch (Exception e) {
-            System.out.println("Database connection FAILED:");
-            e.printStackTrace();
+            System.out.println(">>> Klaida nuskaitant DBtables.sql failą <<<:" + e.getMessage());
+        }
+    }
+
+    public static void closeConnection() {
+        if (conn != null) {
+            try {
+                conn.close();
+                conn = null;
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }
