@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS exercise (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ExerciseName TEXT NOT NULL,
+    CalorieburnPerMin INTEGER
+);
+CREATE TABLE IF NOT EXISTS DailyExerciseLog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    totalCalorieBurn INTEGER,
+    exerciseID INTEGER,
+    userId INTEGER,
+    Date TEXT
+);
+CREATE TABLE IF NOT EXISTS meals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    MealName TEXT NOT NULL,
+    CaloriePerGram REAL
+);
+CREATE TABLE IF NOT EXISTS DailyMealLog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    totalCalorieIntake INTEGER,
+    mealID INTEGER,
+    userId INTEGER,
+    Date TEXT
+);
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    gender TEXT,
+    age INTEGER,
+    password TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS waists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    WaistM REAL,
+    WaistE REAL,
+    UserId INTEGER,
+    Date TEXT,
+    average REAL
+);
+CREATE TABLE IF NOT EXISTS weights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    WeightM REAL,
+    WeightE REAL,
+    UserId INTEGER,
+    Date TEXT,
+    average REAL
+);

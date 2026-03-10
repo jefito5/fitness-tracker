@@ -83,8 +83,8 @@ public class MealDB implements ImealDB{
 			while(rs.next()){
 				Meal m =new Meal();
 				m.setId(rs.getInt("id"));
-				m.setMealName(rs.getString("name"));
-				m.setCaloriesPerGram(rs.getDouble("calories"));
+				m.setMealName(rs.getString("MealName"));
+				m.setCaloriesPerGram(rs.getDouble("CaloriePerGram"));
 				meals.add(m);
 				
 			}

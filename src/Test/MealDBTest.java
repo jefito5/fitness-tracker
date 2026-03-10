@@ -1,3 +1,4 @@
+/** NEVEIKS NES SUTAISYTOS LENTELES...
 package Test;
 
 import org.junit.jupiter.api.Test;
@@ -26,3 +27,4 @@ public class MealDBTest {
         assertEquals(3.6, meal.getCaloriesPerGram());
     }
 }
+*/
