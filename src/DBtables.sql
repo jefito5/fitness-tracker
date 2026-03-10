@@ -1,7 +1,17 @@
 CREATE TABLE IF NOT EXISTS exercise (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ExerciseName TEXT NOT NULL,
-    CalorieburnPerMin INTEGER
+    CalorieburnPerMin REAL,
+    workoutType TEXT DEFAULT 'Cardio',
+    reps INTEGER DEFAULT 0,
+    weightUsed REAL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS preset_exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ExerciseName TEXT NOT NULL,
+    workoutType TEXT NOT NULL,
+    muscleGroup TEXT,
+    met REAL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS DailyExerciseLog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

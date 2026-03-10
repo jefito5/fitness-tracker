@@ -5,10 +5,8 @@ import javax.swing.JPanel;
 import javax.swing.border.MatteBorder;
 
 //import gui.MealIUD.InsertMealListener.InsertExerciseListener;
-import impl.ExerciseDB;
 import impl.MealDB;
 import impl.UserDB;
-import models.Exercise;
 import models.Meal;
 import models.User;
 
@@ -29,8 +27,6 @@ public class MealIUD {
 	private JFrame frame;
 	private JTextField txtmealname;
 	private JTextField txtcalorieG;
-	private JTextField txtexercise;
-	private JTextField txtcalorieB;
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
@@ -129,33 +125,13 @@ public class MealIUD {
 		lblAddExercise.setFont(new Font("Verdana", Font.PLAIN, 18));
 		lblAddExercise.setBounds(322, 284, 176, 30);
 		frame.getContentPane().add(lblAddExercise);
-		
-		JLabel lblExerciseName = new JLabel("Exercise Name:");
-		lblExerciseName.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblExerciseName.setBounds(322, 327, 120, 23);
-		frame.getContentPane().add(lblExerciseName);
-		
-		txtexercise = new JTextField();
-		txtexercise.setColumns(10);
-		txtexercise.setBounds(468, 325, 156, 30);
-		frame.getContentPane().add(txtexercise);
-		
-		JLabel lblCalorieBurnmin = new JLabel("Calorie Burn/min:");
-		lblCalorieBurnmin.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblCalorieBurnmin.setBounds(322, 373, 131, 23);
-		frame.getContentPane().add(lblCalorieBurnmin);
-		
-		JButton btnInsertExercise = new JButton("INSERT EXERCISE");
-		btnInsertExercise.setBounds(403, 407, 139, 23);
-		frame.getContentPane().add(btnInsertExercise);
-		btnInsertExercise.addActionListener(new InsertExerciseListener());
-		
-		txtcalorieB = new JTextField();
-		txtcalorieB.setColumns(10);
-		txtcalorieB.setBounds(468, 366, 156, 30);
-		
-		frame.getContentPane().add(txtcalorieB);
-		
+
+		JButton btnBrowseExercises = new JButton("Browse Exercises");
+		btnBrowseExercises.setFont(new Font("Verdana", Font.PLAIN, 13));
+		btnBrowseExercises.setBounds(322, 325, 180, 30);
+		btnBrowseExercises.addActionListener(e -> new ExerciseIUD(ids, 70.0));
+		frame.getContentPane().add(btnBrowseExercises);
+
 		textField = new JTextField();
 		textField.setBounds(292, 11, 86, 20);
 		frame.getContentPane().add(textField);
@@ -294,38 +270,4 @@ public class MealIUD {
 		}
 		}
 	
-	class InsertExerciseListener implements ActionListener{
-//here is validations for numeric input in calorie so check it out and use on other classes too
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			
-			try{
-			if(txtexercise.getText().isEmpty() || txtcalorieB.getText().isEmpty()){
-				JOptionPane.showMessageDialog(null, "The fields can not be empty!! ");
-			}
-			else{
-			Exercise ee = new Exercise();
-			ee.setExerciseName(txtexercise.getText());
-			int text_2=Integer.parseInt(txtcalorieB.getText());
-			ee.setCalorieburn(text_2);
-			
-			ExerciseDB udb=new ExerciseDB();
-			udb.insertExercise(ee);
-			/*int rowUpdate= udb.insertExercise(ee);
-			if(rowUpdate>0){
-			JOptionPane.showMessageDialog(null, "Exercise Added!");	
-				txtexercise.setText("");
-				txtcalorieB.setText("");
-			}
-			else{
-				JOptionPane.showMessageDialog(null, "Failed to Add Exercise!!");
-			}*/
-			}
-			}
-			catch(NumberFormatException eee){
-				JOptionPane.showConfirmDialog(null,
-			"Please enter numeric value in calorie", "Naughty", JOptionPane.CANCEL_OPTION);
-			}
-		}
-		}
 }
