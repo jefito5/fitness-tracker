@@ -29,8 +29,12 @@ public class PresetExerciseDB {
             addColumnIfMissing(conn, "exercise", "reps", "INTEGER DEFAULT 0");
             addColumnIfMissing(conn, "exercise", "weightUsed", "REAL DEFAULT 0");
 
-            ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM preset_exercises");
-            if (rs.next() && rs.getInt(1) > 0) return;
+            Statement countStmt = conn.createStatement();
+            ResultSet rs = countStmt.executeQuery("SELECT COUNT(*) FROM preset_exercises");
+            boolean hasData = rs.next() && rs.getInt(1) > 0;
+            rs.close();
+            countStmt.close();
+            if (hasData) return;
 
             InputStream is = getClass().getClassLoader().getResourceAsStream("exercises.json");
             if (is == null) is = getClass().getResourceAsStream("/exercises.json");
