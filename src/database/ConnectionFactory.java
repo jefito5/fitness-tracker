@@ -26,12 +26,18 @@ public class ConnectionFactory {
             try {
                 new ConnectionFactory();
                 conn = DriverManager.getConnection(URI);
+                conn.setAutoCommit(true);
                 createTablesFromFile();
             } catch (SQLException ex) {
                 System.out.println("Nepavyko prisijungti prie DB!");
                 ex.printStackTrace();
             }
         }
+        try {
+            if (conn != null && !conn.getAutoCommit()) {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException ignored) {}
         return conn;
     }
 
