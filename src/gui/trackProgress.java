@@ -51,10 +51,8 @@ public class trackProgress {
 	private JTextField txtintake;
 	private JTextField mealsID;
 	private JTextField exerciseID;
-	private JTextField txtexercise;
-	private JTextField txtcalorieburn;
-	private JTextField txtduration;
 	private JButton btnDeleteE;
+	private JButton btnAddToLog;
 	private JTextField txtuserid;
 	private int get;
 
@@ -282,52 +280,23 @@ public class trackProgress {
 		trackFrame.getContentPane().add(btnDelete);
 		btnDelete.addActionListener(new DeleteMealListener());
 		
-		JLabel lblExerciseName = new JLabel("Exercise Name:");
-		lblExerciseName.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblExerciseName.setBounds(340, 469, 122, 14);
-		trackFrame.getContentPane().add(lblExerciseName);
-		
-		JLabel lblCalorieBurnmin = new JLabel("Calorie Burn/min:");
-		lblCalorieBurnmin.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblCalorieBurnmin.setBounds(340, 503, 131, 14);
-		trackFrame.getContentPane().add(lblCalorieBurnmin);
-		
-		JLabel lblDuration = new JLabel("Duration(min):");
-		lblDuration.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblDuration.setBounds(340, 537, 131, 14);
-		trackFrame.getContentPane().add(lblDuration);
-		
-		txtexercise = new JTextField();
-		txtexercise.setColumns(10);
-		txtexercise.setBounds(457, 465, 164, 23);
-		trackFrame.getContentPane().add(txtexercise);
-		
-		txtcalorieburn = new JTextField();
-		txtcalorieburn.setColumns(10);
-		txtcalorieburn.setBounds(477, 500, 144, 23);
-		trackFrame.getContentPane().add(txtcalorieburn);
-		
-		txtduration = new JTextField();
-		txtduration.setColumns(10);
-		txtduration.setBounds(457, 534, 164, 23);
-		trackFrame.getContentPane().add(txtduration);
-		
-		JButton btnInsertE = new JButton("Insert");
-		btnInsertE.setBounds(345, 580, 84, 23);
-		trackFrame.getContentPane().add(btnInsertE);
-        btnInsertE.addActionListener(new InsertDailyExerciseListener());
-		
-		JButton btnUpdateE = new JButton("Update");
-		//btnUpdateE.setFont(new Font("Tahoma", Font.PLAIN, 11));
-		btnUpdateE.setBounds(439, 580, 89, 23);
-		trackFrame.getContentPane().add(btnUpdateE);
-		btnUpdateE.addActionListener(new UpdateExerciseListener());
-		
+		JLabel lblSelectHint = new JLabel("← Pasirink pratimą iš sąrašo, tada spausk Add");
+		lblSelectHint.setFont(new Font("Verdana", Font.ITALIC, 11));
+		lblSelectHint.setForeground(Color.GRAY);
+		lblSelectHint.setBounds(330, 462, 310, 18);
+		trackFrame.getContentPane().add(lblSelectHint);
+
+		btnAddToLog = new JButton("Add to Today's Log");
+		btnAddToLog.setFont(new Font("Verdana", Font.BOLD, 13));
+		btnAddToLog.setBounds(330, 490, 200, 32);
+		trackFrame.getContentPane().add(btnAddToLog);
+		btnAddToLog.addActionListener(new InsertDailyExerciseListener());
+
 		btnDeleteE = new JButton("Delete");
-		btnDeleteE.setBounds(538, 580, 89, 23);
+		btnDeleteE.setBounds(540, 490, 89, 32);
 		trackFrame.getContentPane().add(btnDeleteE);
 		btnDeleteE.addActionListener(new DeleteExerciseListener());
-		
+
 		ButtonGroup bg=new ButtonGroup();
 		
 		txtuserid = new JTextField();
@@ -405,18 +374,16 @@ public class trackProgress {
 	       }
 	    }
 	
-	   private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {                                                  
-	    
+	   private int selectedExerciseId = -1;
+	   private double selectedCalorieBurn = 0;
+
+	   private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {
 	        int i = table2.getSelectedRow();
-
+	        if (i < 0) return;
 	        TableModel model = table2.getModel();
-	   
-	        exerciseID.setText(model.getValueAt(i,0).toString());
-
-	        txtexercise.setText(model.getValueAt(i,1).toString());
-
-	        txtcalorieburn.setText(model.getValueAt(i,2).toString());
-  
+	        selectedExerciseId = Integer.parseInt(model.getValueAt(i, 0).toString());
+	        selectedCalorieBurn = Double.parseDouble(model.getValueAt(i, 2).toString());
+	        exerciseID.setText(String.valueOf(selectedExerciseId));
 	    } 
 	   
 	   class UpdateMealListener implements ActionListener{
@@ -492,70 +459,29 @@ public class trackProgress {
 			}
 		}
 		
-		   class UpdateExerciseListener implements ActionListener{
-
+		   class UpdateExerciseListener implements ActionListener {
 				@Override
-				public void actionPerformed(ActionEvent e) {
-					try{
-					if(exerciseID.getText().isEmpty() || 
-					txtexercise.getText().isEmpty() || txtcalorieburn.getText().isEmpty()){
-						JOptionPane.showMessageDialog
-					(null, "Please Select exercise above to update!!");
-					}
-					else{
-					ExerciseDB udb=new ExerciseDB();
-					int exercise_id=Integer.parseInt(exerciseID.getText());
-					Exercise ee=udb.getById(exercise_id);
-					ee.setExerciseName(txtexercise.getText());
-					
-					int exercise_burn=Integer.parseInt(txtcalorieburn.getText());
-					ee.setCalorieburn(exercise_burn);
-					
-					int rowUpdate=udb.updateExercise(ee);
-					if(rowUpdate>0){
-						JOptionPane.showMessageDialog(null, "Exercise Updated");
-						DefaultTableModel model = (DefaultTableModel)table2.getModel();
-				         model.setRowCount(0);
-				         Show_Exercise_In_JTable();
-				         exerciseID.setText("");
-				         txtexercise.setText("");
-				         txtcalorieburn.setText("");
-				         
-					}
-					else{
-						JOptionPane.showMessageDialog(null, "Failed to update Exercise");
-					}
-					}
-					}
-					catch(NumberFormatException ee){
-						JOptionPane.showConfirmDialog(null,
-					"Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-				}
-				}   
+				public void actionPerformed(ActionEvent e) { /* nenaudojama */ }
 			   }
 			   
 		class DeleteExerciseListener implements ActionListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			if(exerciseID.getText().isEmpty() ||
-			txtexercise.getText().isEmpty() || txtcalorieburn.getText().isEmpty()){
+			if(selectedExerciseId < 0){
 				JOptionPane.showMessageDialog(null, "Please select exercise above to delete!!");
 			}
 			else{
 			ExerciseDB udb=new ExerciseDB();
-			int exercise_id=Integer.parseInt(exerciseID.getText());
-			Exercise ee=udb.getById(exercise_id); 
+			Exercise ee=udb.getById(selectedExerciseId); 
 			int rowUpdate= udb.deleteExercise(ee);
 			if(rowUpdate>0){
 			JOptionPane.showMessageDialog(null, "Exercise Deleted");
 			DefaultTableModel model = (DefaultTableModel)table2.getModel();
 		    model.setRowCount(0);
 		    Show_Exercise_In_JTable();
+			selectedExerciseId = -1;
 			exerciseID.setText("");
-			txtexercise.setText("");
-			txtcalorieburn.setText("");
-				
 			}
 			else{
 			JOptionPane.showMessageDialog(null, "Failed to delete Exercise");
@@ -785,47 +711,32 @@ public class trackProgress {
 
 							@Override
 							public void actionPerformed(ActionEvent e) {
+								if(selectedExerciseId < 0){
+									JOptionPane.showMessageDialog(null, "Pirmiausia pasirink pratimą iš sąrašo!");
+									return;
+								}
+								String input = JOptionPane.showInputDialog(trackFrame, "Trukmė (minutėmis):");
+								if(input == null || input.trim().isEmpty()) return;
 								try{
-								if(txtcalorieburn.getText().isEmpty() || txtduration.getText().isEmpty()
-									|| exerciseID.getText().isEmpty()
-										|| txtexercise.getText().isEmpty()){
-									JOptionPane.showMessageDialog(null, "The fields can not be empty");
+									double duration = Double.parseDouble(input.trim());
+									DailyExerciseLog del = new DailyExerciseLog();
+									double totalCalorie = selectedCalorieBurn * duration;
+									del.setTotalCalorieBurn(totalCalorie);
+									int user_id = Integer.parseInt(txtuserid.getText());
+									del.setUserId(user_id);
+									del.setExerciseId(selectedExerciseId);
+									ExerciseLogDB udb = new ExerciseLogDB();
+									int rowUpdate = udb.insertDailyLog(del);
+									if(rowUpdate > 0){
+										JOptionPane.showMessageDialog(null, "Exercise Log Added!");
+										selectedExerciseId = -1;
+										exerciseID.setText("");
+									} else {
+										JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
+									}
+								} catch(NumberFormatException ee){
+									JOptionPane.showMessageDialog(null, "Įvesk skaičių minutėms!");
 								}
-								else{
-								DailyExerciseLog del = new DailyExerciseLog();
-								double calorieBurn=Double.parseDouble(txtcalorieburn.getText());
-								double exerciseDuration=Double.parseDouble(txtduration.getText());
-								double totalCalorie=calorieBurn*exerciseDuration;
-								
-								del.setTotalCalorieBurn(totalCalorie);
-								int user_id=Integer.parseInt(txtuserid.getText());
-								del.setUserId(user_id);
-								int exercise_id=Integer.parseInt(exerciseID.getText());
-								del.setExerciseId(exercise_id);
-								
-								ExerciseLogDB udb=new ExerciseLogDB();
-								int rowUpdate= udb.insertDailyLog(del);
-								
-								if(rowUpdate>0){
-								JOptionPane.showMessageDialog(null, "Your Exercise Log Added!");	
-								
-									txtcalorieburn.setText("");
-									txtduration.setText("");
-									txtexercise.setText("");
-									
-								}
-								else{
-									JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
-								}
-								}
-								}
-								catch(NumberFormatException ee){
-									JOptionPane.showConfirmDialog(null, "Please enter numeric value",
-									"Naughty", JOptionPane.CANCEL_OPTION);
-								}
-								
 							}
 						}
 }
-						
-

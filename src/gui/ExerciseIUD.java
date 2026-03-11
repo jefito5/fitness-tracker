@@ -1,7 +1,9 @@
 package gui;
 
 import impl.ExerciseDB;
+import impl.ExerciseLogDB;
 import impl.PresetExerciseDB;
+import models.DailyExerciseLog;
 import models.Exercise;
 import models.PresetExercise;
 
@@ -251,6 +253,7 @@ public class ExerciseIUD {
         public void actionPerformed(ActionEvent e) {
             try {
                 Exercise ex = new Exercise();
+                double durationMinutes = 0;
 
                 if (rdoCardio.isSelected()) {
                     if (txtDuration.getText().trim().isEmpty()) {
@@ -258,13 +261,13 @@ public class ExerciseIUD {
                         return;
                     }
                     PresetExercise sel = (PresetExercise) cmbCardio.getSelectedItem();
-                    double minutes = Double.parseDouble(txtDuration.getText().trim());
+                    durationMinutes = Double.parseDouble(txtDuration.getText().trim());
                     double met = sel != null ? sel.getMet() : 5.0;
-                    double totalKcal = met * userWeightKg * (minutes / 60.0);
+                    double totalKcal = met * userWeightKg * (durationMinutes / 60.0);
 
                     ex.setExerciseName(sel != null ? sel.getExerciseName() : "Cardio");
                     ex.setWorkoutType("Cardio");
-                    ex.setCalorieburn(totalKcal / Math.max(minutes, 1)); // store cal/min
+                    ex.setCalorieburn(totalKcal / Math.max(durationMinutes, 1));
                     ex.setReps(0);
                     ex.setWeightUsed(0);
 
@@ -284,7 +287,18 @@ public class ExerciseIUD {
                     ex.setWeightUsed(weightKg);
                 }
 
-                new ExerciseDB().insertExercise(ex);
+                int newId = new ExerciseDB().insertExercise(ex);
+
+                // Iš karto įrašyti į dienos log'ą
+                if (newId > 0) {
+                    DailyExerciseLog log = new DailyExerciseLog();
+                    log.setExerciseId(newId);
+                    log.setUserId(userId);
+                    double calPerMin = ex.getCalorieburn();
+                    log.setTotalCalorieBurn(calPerMin * Math.max(durationMinutes, 1));
+                    new ExerciseLogDB().insertDailyLog(log);
+                }
+
                 JOptionPane.showMessageDialog(frame, "Exercise Added!");
                 txtDuration.setText("");
                 txtReps.setText("");

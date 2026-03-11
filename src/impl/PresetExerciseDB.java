@@ -25,9 +25,9 @@ public class PresetExerciseDB {
                 "met REAL DEFAULT 0)"
             );
 
-            try { conn.createStatement().execute("ALTER TABLE exercise ADD COLUMN workoutType TEXT DEFAULT 'Cardio'"); } catch (Exception ignored) {}
-            try { conn.createStatement().execute("ALTER TABLE exercise ADD COLUMN reps INTEGER DEFAULT 0"); } catch (Exception ignored) {}
-            try { conn.createStatement().execute("ALTER TABLE exercise ADD COLUMN weightUsed REAL DEFAULT 0"); } catch (Exception ignored) {}
+            addColumnIfMissing(conn, "exercise", "workoutType", "TEXT DEFAULT 'Cardio'");
+            addColumnIfMissing(conn, "exercise", "reps", "INTEGER DEFAULT 0");
+            addColumnIfMissing(conn, "exercise", "weightUsed", "REAL DEFAULT 0");
 
             ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM preset_exercises");
             if (rs.next() && rs.getInt(1) > 0) return;
@@ -157,6 +157,18 @@ public class PresetExerciseDB {
             throw e;
         } finally {
             conn.setAutoCommit(prevAutoCommit);
+        }
+    }
+
+    private void addColumnIfMissing(Connection conn, String table, String column, String definition) {
+        try {
+            ResultSet rs = conn.createStatement().executeQuery("PRAGMA table_info(" + table + ")");
+            while (rs.next()) {
+                if (rs.getString("name").equalsIgnoreCase(column)) return; // jau egzistuoja
+            }
+            conn.createStatement().execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

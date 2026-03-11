@@ -21,6 +21,7 @@ public class ExerciseDB implements IexerciseDB {
     public int insertExercise(Exercise ee) {
         String sql = "INSERT INTO exercise(ExerciseName, CalorieburnPerMin, workoutType, reps, weightUsed) VALUES(?,?,?,?,?)";
         try {
+            conn.setAutoCommit(true); // užtikrinti kad autocommit įjungtas
             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, ee.getExerciseName());
             pstmt.setDouble(2, ee.getCalorieburn());
