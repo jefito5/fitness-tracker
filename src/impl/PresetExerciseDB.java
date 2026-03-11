@@ -162,11 +162,17 @@ public class PresetExerciseDB {
 
     private void addColumnIfMissing(Connection conn, String table, String column, String definition) {
         try {
-            ResultSet rs = conn.createStatement().executeQuery("PRAGMA table_info(" + table + ")");
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery("PRAGMA table_info(" + table + ")");
+            boolean found = false;
             while (rs.next()) {
-                if (rs.getString("name").equalsIgnoreCase(column)) return; // jau egzistuoja
+                if (rs.getString("name").equalsIgnoreCase(column)) { found = true; break; }
             }
-            conn.createStatement().execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+            rs.close();
+            st.close();
+            if (!found) {
+                conn.createStatement().execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

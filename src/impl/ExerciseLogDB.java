@@ -19,9 +19,26 @@ public class ExerciseLogDB implements IdailyElogDB  {
 		conn=ConnectionFactory.getConnection();
 	}
 	
+
+	public void ensureDurationColumn() {
+		try {
+			java.sql.Statement st = conn.createStatement();
+			java.sql.ResultSet rs = st.executeQuery("PRAGMA table_info(DailyExerciseLog)");
+			boolean found = false;
+			while (rs.next()) {
+				if ("durationMinutes".equalsIgnoreCase(rs.getString("name"))) { found = true; break; }
+			}
+			rs.close(); st.close();
+			if (!found) {
+				conn.createStatement().execute("ALTER TABLE DailyExerciseLog ADD COLUMN durationMinutes REAL DEFAULT 0");
+				System.out.println(">>> durationMinutes stulpelis pridėtas <<<");
+			}
+		} catch (Exception e) { e.printStackTrace(); }
+	}
+
 	@Override
 	public int insertDailyLog(DailyExerciseLog el) {
-	String sql="insert into DailyExerciseLog(totalCalorieBurn,exerciseID,userId,Date) values(?,?,?,?)";
+	String sql="insert into DailyExerciseLog(totalCalorieBurn,exerciseID,userId,Date,durationMinutes) values(?,?,?,?,?)";
 		LocalDate today=LocalDate.now();
 		try{
 			PreparedStatement pstmt=conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -30,6 +47,7 @@ public class ExerciseLogDB implements IdailyElogDB  {
 			pstmt.setInt(3, el.getUserId());
 			String ddd=String.valueOf(today);
 			pstmt.setObject(4, ddd);
+			pstmt.setDouble(5, el.getDurationMinutes());
 			
 			if(pstmt.executeUpdate()>0){
 				ResultSet rs=pstmt.getGeneratedKeys();
@@ -65,6 +83,44 @@ public class ExerciseLogDB implements IdailyElogDB  {
 		}
 		return aea;
 		
+	}
+
+	public java.util.ArrayList<Object[]> getTodayLogs(int userId) {
+		java.util.ArrayList<Object[]> list = new java.util.ArrayList<>();
+		LocalDate today = LocalDate.now();
+		String sql =
+			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes " +
+			"FROM DailyExerciseLog del " +
+			"JOIN exercise e ON del.exerciseID = e.id " +
+			"WHERE del.userId = ? AND del.Date = ?";
+		try {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, userId);
+			ps.setString(2, String.valueOf(today));
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				list.add(new Object[]{
+					rs.getInt("id"),
+					rs.getString("ExerciseName"),
+					rs.getString("workoutType"),
+					rs.getDouble("totalCalorieBurn"),
+					rs.getInt("reps"),
+					rs.getDouble("weightUsed"),
+					rs.getDouble("durationMinutes")
+				});
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return list;
+	}
+
+	public int deleteTodayLog(int logId) {
+		String sql = "DELETE FROM DailyExerciseLog WHERE id = ?";
+		try {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, logId);
+			return ps.executeUpdate();
+		} catch (SQLException e) { e.printStackTrace(); }
+		return 0;
 	}
 
 }

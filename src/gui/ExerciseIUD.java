@@ -291,12 +291,15 @@ public class ExerciseIUD {
 
                 // Iš karto įrašyti į dienos log'ą
                 if (newId > 0) {
+                    ExerciseLogDB logDB = new ExerciseLogDB();
+                    logDB.ensureDurationColumn();
                     DailyExerciseLog log = new DailyExerciseLog();
                     log.setExerciseId(newId);
                     log.setUserId(userId);
                     double calPerMin = ex.getCalorieburn();
                     log.setTotalCalorieBurn(calPerMin * Math.max(durationMinutes, 1));
-                    new ExerciseLogDB().insertDailyLog(log);
+                    log.setDurationMinutes(durationMinutes);
+                    logDB.insertDailyLog(log);
                 }
 
                 JOptionPane.showMessageDialog(frame, "Exercise Added!");

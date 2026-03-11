@@ -52,7 +52,6 @@ public class trackProgress {
 	private JTextField mealsID;
 	private JTextField exerciseID;
 	private JButton btnDeleteE;
-	private JButton btnAddToLog;
 	private JTextField txtuserid;
 	private int get;
 
@@ -185,7 +184,7 @@ public class trackProgress {
 		
 		
 		
-		JLabel lblAddYourExercise = new JLabel("Add your Exercises for Today!!");
+		JLabel lblAddYourExercise = new JLabel("Today's Exercises");
 		lblAddYourExercise.setFont(new Font("Tahoma", Font.PLAIN, 17));
 		lblAddYourExercise.setBounds(329, 234, 233, 23);
 		trackFrame.getContentPane().add(lblAddYourExercise);
@@ -202,7 +201,7 @@ public class trackProgress {
 
                 },
                 new String [] {
-                   "Exercise ID", "Exercise Name", "Calorie Burn/min"
+                   "Log ID", "Exercise Name", "Info", "Calories"
                 }
             ));
             table2.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -280,20 +279,8 @@ public class trackProgress {
 		trackFrame.getContentPane().add(btnDelete);
 		btnDelete.addActionListener(new DeleteMealListener());
 		
-		JLabel lblSelectHint = new JLabel("← Pasirink pratimą iš sąrašo, tada spausk Add");
-		lblSelectHint.setFont(new Font("Verdana", Font.ITALIC, 11));
-		lblSelectHint.setForeground(Color.GRAY);
-		lblSelectHint.setBounds(330, 462, 310, 18);
-		trackFrame.getContentPane().add(lblSelectHint);
-
-		btnAddToLog = new JButton("Add to Today's Log");
-		btnAddToLog.setFont(new Font("Verdana", Font.BOLD, 13));
-		btnAddToLog.setBounds(330, 490, 200, 32);
-		trackFrame.getContentPane().add(btnAddToLog);
-		btnAddToLog.addActionListener(new InsertDailyExerciseListener());
-
 		btnDeleteE = new JButton("Delete");
-		btnDeleteE.setBounds(540, 490, 89, 32);
+		btnDeleteE.setBounds(330, 462, 100, 28);
 		trackFrame.getContentPane().add(btnDeleteE);
 		btnDeleteE.addActionListener(new DeleteExerciseListener());
 
@@ -356,33 +343,36 @@ public class trackProgress {
 	   
 	   public void Show_Exercise_In_JTable()
 	   {
-		   
-		   ExerciseDB udb=new ExerciseDB();
-	       ArrayList<Exercise> exercises = udb.getExercise();
-//	       for (Meal mm:meals)
-//	    	   System.out.println(mm.getName());   
+		   ExerciseLogDB logDB = new ExerciseLogDB();
+		   java.util.ArrayList<Object[]> logs = logDB.getTodayLogs(get);
 	       DefaultTableModel model = (DefaultTableModel)table2.getModel();
-	       Object[] row = new Object[4];
-	       for(int i = 0; i < exercises.size(); i++)
-	       {
-	           row[0]=exercises.get(i).getId();
-	          
-	           row[1] = exercises.get(i).getExerciseName();
-	           row[2] = exercises.get(i).getCalorieburn();
-	           
-	           model.addRow(row);
+	       model.setRowCount(0);
+	       for (Object[] lr : logs) {
+	           // lr: [0]=logId, [1]=name, [2]=type, [3]=totalKcal, [4]=reps, [5]=weightKg, [6]=durationMin
+	           String type = (String) lr[2];
+	           String info;
+	           String calories;
+	           if ("Strength".equals(type)) {
+	               int reps = (int) lr[4];
+	               int kg   = (int)((double) lr[5]);
+	               info     = reps + " reps @ " + kg + " kg";
+	               calories = "-";
+	           } else {
+	               int mins = (int)((double) lr[6]);
+	               info     = mins + " min";
+	               calories = String.format("%.0f kcal", (double) lr[3]);
+	           }
+	           model.addRow(new Object[]{lr[0], lr[1], info, calories});
 	       }
 	    }
 	
 	   private int selectedExerciseId = -1;
-	   private double selectedCalorieBurn = 0;
 
 	   private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {
 	        int i = table2.getSelectedRow();
 	        if (i < 0) return;
 	        TableModel model = table2.getModel();
 	        selectedExerciseId = Integer.parseInt(model.getValueAt(i, 0).toString());
-	        selectedCalorieBurn = Double.parseDouble(model.getValueAt(i, 2).toString());
 	        exerciseID.setText(String.valueOf(selectedExerciseId));
 	    } 
 	   
@@ -469,28 +459,25 @@ public class trackProgress {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if(selectedExerciseId < 0){
-				JOptionPane.showMessageDialog(null, "Please select exercise above to delete!!");
+				JOptionPane.showMessageDialog(null, "Please select exercise to delete!!");
 			}
 			else{
-			ExerciseDB udb=new ExerciseDB();
-			Exercise ee=udb.getById(selectedExerciseId); 
-			int rowUpdate= udb.deleteExercise(ee);
-			if(rowUpdate>0){
-			JOptionPane.showMessageDialog(null, "Exercise Deleted");
-			DefaultTableModel model = (DefaultTableModel)table2.getModel();
-		    model.setRowCount(0);
-		    Show_Exercise_In_JTable();
+			ExerciseLogDB logDB = new ExerciseLogDB();
+			int rowUpdate = logDB.deleteTodayLog(selectedExerciseId);
+			if(rowUpdate > 0){
+			JOptionPane.showMessageDialog(null, "Exercise removed from today's log");
+			Show_Exercise_In_JTable();
 			selectedExerciseId = -1;
 			exerciseID.setText("");
 			}
 			else{
-			JOptionPane.showMessageDialog(null, "Failed to delete Exercise");
+			JOptionPane.showMessageDialog(null, "Failed to delete");
 			}
 			}
 			}		
 				}
 				
-				class InsertWeightListener implements ActionListener{
+class InsertWeightListener implements ActionListener{
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
@@ -700,43 +687,10 @@ public class trackProgress {
 								}
 								catch(NumberFormatException ee){
 									JOptionPane.showConfirmDialog(null, "Please enter numeric value",
-								"Naughty", JOptionPane.CANCEL_OPTION);
+								"Durnas ar kas? praso skaiciaus", JOptionPane.CANCEL_OPTION);
 								}
 								
 								
 							}
 							}
-			//code for daily dairy of exercise				
-						class InsertDailyExerciseListener implements ActionListener{
-
-							@Override
-							public void actionPerformed(ActionEvent e) {
-								if(selectedExerciseId < 0){
-									JOptionPane.showMessageDialog(null, "Pirmiausia pasirink pratimą iš sąrašo!");
-									return;
-								}
-								String input = JOptionPane.showInputDialog(trackFrame, "Trukmė (minutėmis):");
-								if(input == null || input.trim().isEmpty()) return;
-								try{
-									double duration = Double.parseDouble(input.trim());
-									DailyExerciseLog del = new DailyExerciseLog();
-									double totalCalorie = selectedCalorieBurn * duration;
-									del.setTotalCalorieBurn(totalCalorie);
-									int user_id = Integer.parseInt(txtuserid.getText());
-									del.setUserId(user_id);
-									del.setExerciseId(selectedExerciseId);
-									ExerciseLogDB udb = new ExerciseLogDB();
-									int rowUpdate = udb.insertDailyLog(del);
-									if(rowUpdate > 0){
-										JOptionPane.showMessageDialog(null, "Exercise Log Added!");
-										selectedExerciseId = -1;
-										exerciseID.setText("");
-									} else {
-										JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
-									}
-								} catch(NumberFormatException ee){
-									JOptionPane.showMessageDialog(null, "Įvesk skaičių minutėms!");
-								}
-							}
-						}
 }
