@@ -123,4 +123,70 @@ public class ExerciseLogDB implements IdailyElogDB  {
 		return 0;
 	}
 
+	/**
+	 * Grąžina konkretaus vartotojo treniruočių žurnalą pasirinktai datai.
+	 * @param userId  vartotojo ID
+	 * @param date    data formatu "yyyy-MM-dd"
+	 */
+	public java.util.ArrayList<Object[]> getLogsByDate(int userId, String date) {
+		java.util.ArrayList<Object[]> list = new java.util.ArrayList<>();
+		String sql =
+			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes " +
+			"FROM DailyExerciseLog del " +
+			"JOIN exercise e ON del.exerciseID = e.id " +
+			"WHERE del.userId = ? AND del.Date = ?";
+		try {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, userId);
+			ps.setString(2, date);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				list.add(new Object[]{
+					rs.getInt("id"),
+					rs.getString("ExerciseName"),
+					rs.getString("workoutType"),
+					rs.getDouble("totalCalorieBurn"),
+					rs.getInt("reps"),
+					rs.getDouble("weightUsed"),
+					rs.getDouble("durationMinutes")
+				});
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return list;
+	}
+
+	/**
+	 * Grąžina visas dienas nuo pirmojo DB įrašo (treniruotė ARBA maistas) iki šiandien.
+	 */
+	public java.util.ArrayList<String> getAllLogDates(int userId) {
+		java.util.ArrayList<String> dates = new java.util.ArrayList<>();
+		// Rasti seniausią datą iš abiejų lentelių
+		String sql =
+			"SELECT MIN(earliest) FROM (" +
+			"  SELECT MIN(Date) AS earliest FROM DailyExerciseLog WHERE userId = ?" +
+			"  UNION ALL" +
+			"  SELECT MIN(Date) AS earliest FROM DailyMealLog WHERE userId = ?" +
+			")";
+		try {
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, userId);
+			ps.setInt(2, userId);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next() && rs.getString(1) != null) {
+				java.time.LocalDate start = java.time.LocalDate.parse(rs.getString(1));
+				java.time.LocalDate today = java.time.LocalDate.now();
+				// Generuoti kiekvieną dieną nuo start iki today (naujiausios viršuje)
+				java.time.LocalDate d = today;
+				while (!d.isBefore(start)) {
+					dates.add(d.toString());
+					d = d.minusDays(1);
+				}
+			} else {
+				// Jei DB tuščia — rodyti tik šiandieną
+				dates.add(java.time.LocalDate.now().toString());
+			}
+		} catch (SQLException e) { e.printStackTrace(); }
+		return dates;
+	}
+
 }
