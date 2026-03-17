@@ -89,9 +89,32 @@ public class MealLogDB implements IdailylogDB{
 			e.printStackTrace();
 		}
 		return aa;
-		
+
 	}
 
-
+	public ArrayList<Object[]> getTodayMealLogs(int userId) {
+		ArrayList<Object[]> logs = new ArrayList<>();
+		LocalDate today = LocalDate.now();
+		String sql = "SELECT d.mealID, m.MealName, m.CaloriePerGram, d.totalCalorieIntake " +
+				"FROM DailyMealLog d JOIN meals m ON d.mealID = m.id " +
+				"WHERE d.Date=? AND d.userId=?";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, String.valueOf(today));
+			pstmt.setInt(2, userId);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Object[] row = new Object[4];
+				row[0] = rs.getInt("mealID");
+				row[1] = rs.getString("MealName");
+				row[2] = rs.getDouble("CaloriePerGram");
+				row[3] = rs.getDouble("totalCalorieIntake");
+				logs.add(row);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return logs;
+	}
 
 }
