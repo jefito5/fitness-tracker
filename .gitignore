@@ -1,2 +1,4 @@
 fitness.db
 fitness.db-journal
+fitness.db-shm
+fitness.db-wal
