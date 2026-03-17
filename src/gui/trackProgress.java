@@ -82,7 +82,7 @@ public class trackProgress {
 		JButton btnBack = new JButton("BACK");
 		btnBack.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//new MealIUD(get, null, get, null, null);
+				
 				trackFrame.dispose();
 			}
 		});
@@ -94,76 +94,78 @@ public class trackProgress {
 		lblTrackYourDaily.setBounds(130, 11, 392, 47);
 		trackFrame.getContentPane().add(lblTrackYourDaily);
 		
-		JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
-		lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
-		lblNewLabel.setBounds(30, 125, 177, 32);
-		trackFrame.getContentPane().add(lblNewLabel);
+		// ── TODO: not yet implemented ──
+		// JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
+		// lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
+		// lblNewLabel.setBounds(30, 125, 177, 32);
+		// trackFrame.getContentPane().add(lblNewLabel);
+		// 
+		// JLabel lblMorning = new JLabel("Morning:");
+		// lblMorning.setFont(new Font("Verdana", Font.PLAIN, 16));
+		// lblMorning.setBounds(40, 156, 81, 23);
+		// trackFrame.getContentPane().add(lblMorning);
+		// 
+		// txtmorningW = new JTextField();
+		// txtmorningW.setBounds(110, 159, 122, 23);
+		// trackFrame.getContentPane().add(txtmorningW);
+		// txtmorningW.setColumns(10);
+		// 
+		// JLabel lblEvening = new JLabel("Evening:");
+		// lblEvening.setFont(new Font("Verdana", Font.PLAIN, 16));
+		// lblEvening.setBounds(40, 190, 81, 23);
+		// trackFrame.getContentPane().add(lblEvening);
+		// 
+		// txtEveningW = new JTextField();
+		// txtEveningW.setColumns(10);
+		// txtEveningW.setBounds(110, 190, 122, 23);
+		// trackFrame.getContentPane().add(txtEveningW);
+		// 
+		// JButton btnAdd = new JButton("ADD");
+		// btnAdd.setBounds(234, 159, 65, 23);
+		// trackFrame.getContentPane().add(btnAdd);
+		// btnAdd.addActionListener(new InsertWeightListener());
+		// 
+		// JButton btnEvening = new JButton("ADD");
+		// btnEvening.setBounds(234, 190, 65, 23);
+		// trackFrame.getContentPane().add(btnEvening);
+		// 
+		// btnEvening.addActionListener(new UpdateWeightListener());
 		
-		JLabel lblMorning = new JLabel("Morning:");
-		lblMorning.setFont(new Font("Verdana", Font.PLAIN, 16));
-		lblMorning.setBounds(40, 156, 81, 23);
-		trackFrame.getContentPane().add(lblMorning);
-		
-		txtmorningW = new JTextField();
-		txtmorningW.setBounds(110, 159, 122, 23);
-		trackFrame.getContentPane().add(txtmorningW);
-		txtmorningW.setColumns(10);
-		
-		JLabel lblEvening = new JLabel("Evening:");
-		lblEvening.setFont(new Font("Verdana", Font.PLAIN, 16));
-		lblEvening.setBounds(40, 190, 81, 23);
-		trackFrame.getContentPane().add(lblEvening);
-		
-		txtEveningW = new JTextField();
-		txtEveningW.setColumns(10);
-		txtEveningW.setBounds(110, 190, 122, 23);
-		trackFrame.getContentPane().add(txtEveningW);
-		
-		JButton btnAdd = new JButton("ADD");
-		btnAdd.setBounds(234, 159, 65, 23);
-		trackFrame.getContentPane().add(btnAdd);
-		btnAdd.addActionListener(new InsertWeightListener());
-		
-		JButton btnEvening = new JButton("ADD");
-		btnEvening.setBounds(234, 190, 65, 23);
-		trackFrame.getContentPane().add(btnEvening);
-		
-		btnEvening.addActionListener(new UpdateWeightListener());
-		
-		JLabel lblYourWaist = new JLabel("Your Waist(in centimeters):");
-		lblYourWaist.setFont(new Font("Verdana", Font.BOLD, 15));
-		lblYourWaist.setBounds(309, 125, 196, 32);
-		trackFrame.getContentPane().add(lblYourWaist);
-		
-		JLabel label = new JLabel("Morning:");
-		label.setFont(new Font("Verdana", Font.PLAIN, 16));
-		label.setBounds(319, 156, 81, 23);
-		trackFrame.getContentPane().add(label);
-		
-		txtMorningWa = new JTextField();
-		txtMorningWa.setColumns(10);
-		txtMorningWa.setBounds(393, 159, 122, 23);
-		trackFrame.getContentPane().add(txtMorningWa);
-		
-		JLabel label_1 = new JLabel("Evening:");
-		label_1.setFont(new Font("Verdana", Font.PLAIN, 16));
-		label_1.setBounds(319, 190, 81, 23);
-		trackFrame.getContentPane().add(label_1);
-		
-		txtEveningWa = new JTextField();
-		txtEveningWa.setColumns(10);
-		txtEveningWa.setBounds(393, 193, 122, 23);
-		trackFrame.getContentPane().add(txtEveningWa);
-		
-		JButton btnWaistM = new JButton("ADD");
-		btnWaistM.setBounds(520, 159, 65, 23);
-		trackFrame.getContentPane().add(btnWaistM);
-		btnWaistM.addActionListener(new InsertWaistListener());
-		
-		JButton btnWaistE = new JButton("ADD");
-		btnWaistE.setBounds(520, 193, 65, 23);
-		trackFrame.getContentPane().add(btnWaistE);
-		btnWaistE.addActionListener(new UpdateWaistListener());
+		// ── TODO: not yet implemented ──
+		// JLabel lblYourWaist = new JLabel("Your Waist(in centimeters):");
+		// lblYourWaist.setFont(new Font("Verdana", Font.BOLD, 15));
+		// lblYourWaist.setBounds(309, 125, 196, 32);
+		// trackFrame.getContentPane().add(lblYourWaist);
+		// 
+		// JLabel label = new JLabel("Morning:");
+		// label.setFont(new Font("Verdana", Font.PLAIN, 16));
+		// label.setBounds(319, 156, 81, 23);
+		// trackFrame.getContentPane().add(label);
+		// 
+		// txtMorningWa = new JTextField();
+		// txtMorningWa.setColumns(10);
+		// txtMorningWa.setBounds(393, 159, 122, 23);
+		// trackFrame.getContentPane().add(txtMorningWa);
+		// 
+		// JLabel label_1 = new JLabel("Evening:");
+		// label_1.setFont(new Font("Verdana", Font.PLAIN, 16));
+		// label_1.setBounds(319, 190, 81, 23);
+		// trackFrame.getContentPane().add(label_1);
+		// 
+		// txtEveningWa = new JTextField();
+		// txtEveningWa.setColumns(10);
+		// txtEveningWa.setBounds(393, 193, 122, 23);
+		// trackFrame.getContentPane().add(txtEveningWa);
+		// 
+		// JButton btnWaistM = new JButton("ADD");
+		// btnWaistM.setBounds(520, 159, 65, 23);
+		// trackFrame.getContentPane().add(btnWaistM);
+		// btnWaistM.addActionListener(new InsertWaistListener());
+		// 
+		// JButton btnWaistE = new JButton("ADD");
+		// btnWaistE.setBounds(520, 193, 65, 23);
+		// trackFrame.getContentPane().add(btnWaistE);
+		// btnWaistE.addActionListener(new UpdateWaistListener());
 		
 		JLabel lblAddYourMeals = new JLabel("Add your Meals for Today!!");
 		lblAddYourMeals.setFont(new Font("Tahoma", Font.PLAIN, 17));
@@ -182,7 +184,7 @@ public class trackProgress {
 
                 },
                 new String [] {
-                   "Meal ID", "Meals Name", "Calorie Per Gram", "Total kcal"
+                   "Meal ID", "Meals Name", "Kcal/100g", "Total kcal"
                 }
             ));
             table.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -219,17 +221,18 @@ public class trackProgress {
                 }
             });
 				
-		JLabel lblKnowYourProgress = new JLabel("Know Your Progress!!");
-		lblKnowYourProgress.setForeground(Color.RED);
-		lblKnowYourProgress.setFont(new Font("Tahoma", Font.PLAIN, 17));
-		lblKnowYourProgress.setBounds(460, 55, 178, 23);
-		trackFrame.getContentPane().add(lblKnowYourProgress);
-		
-		JButton btnAnalyse = new JButton("ANALYSE");
-
-		btnAnalyse.setFont(new Font("Verdana", Font.PLAIN, 15));
-		btnAnalyse.setBounds(511, 83, 110, 32);
-		trackFrame.getContentPane().add(btnAnalyse);
+		// ── TODO: not yet implemented ──
+		// JLabel lblKnowYourProgress = new JLabel("Know Your Progress!!");
+		// lblKnowYourProgress.setForeground(Color.RED);
+		// lblKnowYourProgress.setFont(new Font("Tahoma", Font.PLAIN, 17));
+		// lblKnowYourProgress.setBounds(460, 55, 178, 23);
+		// trackFrame.getContentPane().add(lblKnowYourProgress);
+		// 
+		// JButton btnAnalyse = new JButton("ANALYSE");
+		// 
+		// btnAnalyse.setFont(new Font("Verdana", Font.PLAIN, 15));
+		// btnAnalyse.setBounds(511, 83, 110, 32);
+		// trackFrame.getContentPane().add(btnAnalyse);
 		
 		
 		txtmealName = new JTextField();
@@ -248,26 +251,24 @@ public class trackProgress {
 		trackFrame.getContentPane().add(txtintake);
 		
 		mealsID = new JTextField();
-		mealsID.setBounds(220, 238, 45, 20);
-		trackFrame.getContentPane().add(mealsID);
 		mealsID.setColumns(10);
+		// mealsID - used internally, not shown to user
 		
 		exerciseID = new JTextField();
-		exerciseID.setBounds(275, 238, 45, 20);
-		trackFrame.getContentPane().add(exerciseID);
 		exerciseID.setColumns(10);
+		// exerciseID - used internally, not shown to user
 		
 		JLabel lblMealName = new JLabel("Meal Name:");
 		lblMealName.setFont(new Font("Verdana", Font.PLAIN, 15));
 		lblMealName.setBounds(30, 469, 107, 14);
 		trackFrame.getContentPane().add(lblMealName);
 		
-		JLabel lblCaloriegram = new JLabel("Calorie/Gram:");
+		JLabel lblCaloriegram = new JLabel("Calories/100g:");
 		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
 		lblCaloriegram.setBounds(30, 503, 107, 14);
 		trackFrame.getContentPane().add(lblCaloriegram);
 		
-		JLabel lblAmount = new JLabel("Amount(gm):");
+		JLabel lblAmount = new JLabel("Amount (g):");
 		lblAmount.setFont(new Font("Verdana", Font.PLAIN, 15));
 		lblAmount.setBounds(30, 537, 107, 19);
 		trackFrame.getContentPane().add(lblAmount);
@@ -296,23 +297,14 @@ public class trackProgress {
 		ButtonGroup bg=new ButtonGroup();
 		
 		txtuserid = new JTextField();
-		txtuserid.setBounds(13, 45, 86, 20);
-		trackFrame.getContentPane().add(txtuserid);
 		txtuserid.setColumns(10);
-		String iss=String.valueOf(get);
-		txtuserid.setText(iss);
+		txtuserid.setText(String.valueOf(get));
+		// txtuserid - used internally, not shown to user
 		
-		btnAnalyse.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int asd=Integer.parseInt(txtuserid.getText());
-				new PeriodSelect(asd);
-				//System.out.println(textField.getText());
-				trackFrame.setVisible(false);
-			}
-		});
+		// btnAnalyse.addActionListener(...); // TODO: not yet implemented
 
-		// ── ISTORIJOS DATOS PASIRINKIMAS ──────────────────────────────────────
-		JLabel lblHistory = new JLabel("Istorija:");
+		// ── HISTORY DATE SELECTOR ───────────────────────────────────────────
+		JLabel lblHistory = new JLabel("History:");
 		lblHistory.setFont(new Font("Verdana", Font.BOLD, 13));
 		lblHistory.setBounds(330, 462, 80, 20);
 		trackFrame.getContentPane().add(lblHistory);
@@ -321,21 +313,21 @@ public class trackProgress {
 		dateComboBox.setBounds(330, 488, 160, 25);
 		trackFrame.getContentPane().add(dateComboBox);
 
-		JButton btnLoadHistory = new JButton("Rodyti");
+		JButton btnLoadHistory = new JButton("Show");
 		btnLoadHistory.setBounds(498, 488, 80, 25);
 		trackFrame.getContentPane().add(btnLoadHistory);
 
-		JButton btnTodayBtn = new JButton("Šiandien");
+		JButton btnTodayBtn = new JButton("Today");
 		btnTodayBtn.setBounds(330, 520, 110, 25);
 		trackFrame.getContentPane().add(btnTodayBtn);
 
-		lblSelectedDate = new JLabel("Rodoma: " + currentViewDate);
+		lblSelectedDate = new JLabel("Viewing: " + currentViewDate);
 		lblSelectedDate.setFont(new Font("Verdana", Font.ITALIC, 11));
 		lblSelectedDate.setForeground(Color.BLUE);
 		lblSelectedDate.setBounds(330, 550, 200, 20);
 		trackFrame.getContentPane().add(lblSelectedDate);
 
-		// Užpildyti datos sąrašą
+		// Populate date list
 		refreshDateComboBox();
 
 		btnLoadHistory.addActionListener(new ActionListener() {
@@ -343,7 +335,7 @@ public class trackProgress {
 				String selected = (String) dateComboBox.getSelectedItem();
 				if (selected != null && !selected.isEmpty()) {
 					currentViewDate = selected;
-					lblSelectedDate.setText("Rodoma: " + currentViewDate);
+					lblSelectedDate.setText("Viewing: " + currentViewDate);
 					Show_Exercise_In_JTable();
 				}
 			}
@@ -352,7 +344,7 @@ public class trackProgress {
 		btnTodayBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				currentViewDate = String.valueOf(LocalDate.now());
-				lblSelectedDate.setText("Rodoma: " + currentViewDate);
+				lblSelectedDate.setText("Viewing: " + currentViewDate);
 				refreshDateComboBox();
 				Show_Exercise_In_JTable();
 			}
@@ -407,7 +399,7 @@ public class trackProgress {
 	   {
 		   ExerciseLogDB logDB = new ExerciseLogDB();
 		   java.util.ArrayList<Object[]> logs;
-		   // Rodyti pasirinktą datą (arba šiandien, jei nenustatyta)
+		   // Show selected date (or today if not set)
 		   if (currentViewDate != null && !currentViewDate.isEmpty()) {
 			   logs = logDB.getLogsByDate(get, currentViewDate);
 		   } else {
@@ -436,18 +428,18 @@ public class trackProgress {
 	       }
 	    }
 
-	   /** Atnaujina datos pasirinkimo sąrašą iš duomenų bazės */
+	   /** Refreshes the date dropdown from the database */
 	   private void refreshDateComboBox() {
 		   if (dateComboBox == null) return;
 		   ExerciseLogDB logDB = new ExerciseLogDB();
 		   java.util.ArrayList<String> dates = logDB.getAllLogDates(get);
 		   DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-		   // Visada pridėti šiandieną viršuje
+		   // Always add today at the top
 		   String today = String.valueOf(LocalDate.now());
 		   if (!dates.contains(today)) dates.add(0, today);
 		   for (String d : dates) model.addElement(d);
 		   dateComboBox.setModel(model);
-		   // Pasirinkti esamą datą
+		   // Select the currently viewed date
 		   dateComboBox.setSelectedItem(currentViewDate);
 	   }
 	
@@ -542,7 +534,7 @@ public class trackProgress {
 		
 		   class UpdateExerciseListener implements ActionListener {
 				@Override
-				public void actionPerformed(ActionEvent e) { /* nenaudojama */ }
+				public void actionPerformed(ActionEvent e) { /* not used */ }
 			   }
 			   
 		class DeleteExerciseListener implements ActionListener{
@@ -626,7 +618,7 @@ class InsertWeightListener implements ActionListener{
 							double mWt=got.get(0);
 							double averageW=(weight_ev+mWt)/2;
 							w.setAverage(averageW);
-							//i have change here
+							
 							int user_id=Integer.parseInt(txtuserid.getText());
 							w.setUserId(user_id);
 							
@@ -736,7 +728,7 @@ class InsertWeightListener implements ActionListener{
 							}
 							   
 						   }
-						//code for daily dairy of meal			   
+						// Daily meal log entry			   
 						class InsertDailymealListener implements ActionListener{
 
 							@Override
@@ -751,7 +743,7 @@ class InsertWeightListener implements ActionListener{
 								DailyMealLog dml = new DailyMealLog();
 								double calorieIntake=Double.parseDouble(txtmealcalorie.getText());
 								double mealAmount=Double.parseDouble(txtintake.getText());
-								double totalCalorie=calorieIntake*mealAmount;
+								double totalCalorie=(calorieIntake / 100.0) * mealAmount; // kcal/100g * grams
 								
 								dml.setTotalCalorieIntake(totalCalorie);
 								int user_id=Integer.parseInt(txtuserid.getText());
@@ -780,7 +772,7 @@ class InsertWeightListener implements ActionListener{
 								}
 								catch(NumberFormatException ee){
 									JOptionPane.showConfirmDialog(null, "Please enter numeric value",
-								"Durnas ar kas? praso skaiciaus", JOptionPane.CANCEL_OPTION);
+								"Invalid input", JOptionPane.CANCEL_OPTION);
 								}
 								
 								

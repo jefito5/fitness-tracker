@@ -106,7 +106,7 @@ public class MealIUD {
 		lblNewLabel_1.setBounds(10, 332, 100, 23);
 		frame.getContentPane().add(lblNewLabel_1);
 		
-		JLabel lblCaloriegram = new JLabel("Calorie/gram:");
+		JLabel lblCaloriegram = new JLabel("Calories/100g:");
 		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
 		lblCaloriegram.setBounds(10, 373, 120, 23);
 		frame.getContentPane().add(lblCaloriegram);
@@ -252,7 +252,7 @@ public class MealIUD {
 			udb.insertMeal(m);
 			//int rowUpdate= udb.insert(m);
 			//if(rowUpdate>0){
-			JOptionPane.showMessageDialog(null, "Meal Added!\nCalorie per gram: " + text_2 + " kcal/g");	
+			JOptionPane.showMessageDialog(null, "Meal Added!\nCalories per 100g: " + text_2 + " kcal");	
 			
 				txtmealname.setText("");
 				txtcalorieG.setText("");
