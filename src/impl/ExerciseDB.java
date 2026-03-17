@@ -15,46 +15,19 @@ public class ExerciseDB implements IexerciseDB {
 
     public ExerciseDB() {
         conn = ConnectionFactory.getConnection();
-        ensureMuscleGroupColumn();
-    }
-
-    // Automatiškai prideda muscleGroup stulpelį jei jo nėra
-    public void ensureMuscleGroupColumn() {
-        try {
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery("PRAGMA table_info(exercise)");
-            boolean found = false;
-            while (rs.next()) {
-                if ("muscleGroup".equalsIgnoreCase(rs.getString("name"))) {
-                    found = true;
-                    break;
-                }
-            }
-            rs.close();
-            st.close();
-            if (!found) {
-                conn.createStatement().execute(
-                    "ALTER TABLE exercise ADD COLUMN muscleGroup TEXT DEFAULT 'General'"
-                );
-                System.out.println(">>> muscleGroup stulpelis pridėtas <<<");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public int insertExercise(Exercise ee) {
-        String sql = "INSERT INTO exercise(ExerciseName, CalorieburnPerMin, workoutType, reps, weightUsed, muscleGroup) VALUES(?,?,?,?,?,?)";
+        String sql = "INSERT INTO exercise(ExerciseName, CalorieburnPerMin, workoutType, reps, weightUsed) VALUES(?,?,?,?,?)";
         try {
-            conn.setAutoCommit(true);
+            conn.setAutoCommit(true); // užtikrinti kad autocommit įjungtas
             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, ee.getExerciseName());
             pstmt.setDouble(2, ee.getCalorieburn());
             pstmt.setString(3, ee.getWorkoutType() != null ? ee.getWorkoutType() : "Cardio");
             pstmt.setInt(4, ee.getReps());
             pstmt.setDouble(5, ee.getWeightUsed());
-            pstmt.setString(6, ee.getMuscleGroup() != null ? ee.getMuscleGroup() : "General");
 
             if (pstmt.executeUpdate() > 0) {
                 ResultSet rs = pstmt.getGeneratedKeys();
@@ -68,7 +41,7 @@ public class ExerciseDB implements IexerciseDB {
 
     @Override
     public int updateExercise(Exercise ee) {
-        String sql = "UPDATE exercise SET ExerciseName=?, CalorieburnPerMin=?, workoutType=?, reps=?, weightUsed=?, muscleGroup=? WHERE id=?";
+        String sql = "UPDATE exercise SET ExerciseName=?, CalorieburnPerMin=?, workoutType=?, reps=?, weightUsed=? WHERE id=?";
         try {
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, ee.getExerciseName());
@@ -76,8 +49,7 @@ public class ExerciseDB implements IexerciseDB {
             pstmt.setString(3, ee.getWorkoutType());
             pstmt.setInt(4, ee.getReps());
             pstmt.setDouble(5, ee.getWeightUsed());
-            pstmt.setString(6, ee.getMuscleGroup() != null ? ee.getMuscleGroup() : "General");
-            pstmt.setInt(7, ee.getId());
+            pstmt.setInt(6, ee.getId());
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -113,7 +85,6 @@ public class ExerciseDB implements IexerciseDB {
                 ee.setWorkoutType(rs.getString("workoutType"));
                 ee.setReps(rs.getInt("reps"));
                 ee.setWeightUsed(rs.getDouble("weightUsed"));
-                ee.setMuscleGroup(rs.getString("muscleGroup"));
                 exercises.add(ee);
             }
         } catch (SQLException e) {
@@ -137,7 +108,6 @@ public class ExerciseDB implements IexerciseDB {
                 ee.setWorkoutType(rs.getString("workoutType"));
                 ee.setReps(rs.getInt("reps"));
                 ee.setWeightUsed(rs.getDouble("weightUsed"));
-                ee.setMuscleGroup(rs.getString("muscleGroup"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
