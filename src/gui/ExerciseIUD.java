@@ -270,6 +270,7 @@ public class ExerciseIUD {
                     ex.setCalorieburn(totalKcal / Math.max(durationMinutes, 1));
                     ex.setReps(0);
                     ex.setWeightUsed(0);
+                    ex.setMuscleGroup("General");
 
                 } else {
                     if (txtReps.getText().trim().isEmpty() || txtWeight.getText().trim().isEmpty()) {
@@ -285,6 +286,8 @@ public class ExerciseIUD {
                     ex.setCalorieburn(0);
                     ex.setReps(reps);
                     ex.setWeightUsed(weightKg);
+                    String chosenMuscle = (String) cmbMuscleGroup.getSelectedItem();
+                    ex.setMuscleGroup("All".equals(chosenMuscle) ? (sel != null ? sel.getMuscleGroup() : "") : chosenMuscle);
                 }
 
                 int newId = new ExerciseDB().insertExercise(ex);

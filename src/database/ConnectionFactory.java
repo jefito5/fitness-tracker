@@ -27,6 +27,10 @@ public class ConnectionFactory {
                 new ConnectionFactory();
                 conn = DriverManager.getConnection(URI);
                 conn.setAutoCommit(true);
+                // WAL režimas — leidžia keliems procesams skaityti tuo pačiu metu
+                // ir sumažina "database is locked" klaidų tikimybę
+                conn.createStatement().execute("PRAGMA journal_mode=WAL");
+                conn.createStatement().execute("PRAGMA busy_timeout=5000");
                 createTablesFromFile();
             } catch (SQLException ex) {
                 System.out.println("Nepavyko prisijungti prie DB!");

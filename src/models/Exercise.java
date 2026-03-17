@@ -3,10 +3,11 @@ package models;
 public class Exercise {
     private int id;
     private String exerciseName;
-    private double calorieburn;        // CalorieburnPerMin (for cardio = MET based, for strength = 0)
-    private String workoutType;        // "Cardio" or "Strength"
-    private int reps;                  // Strength only
-    private double weightUsed;         // Strength only (kg)
+    private double calorieburn;
+    private String workoutType;
+    private int reps;
+    private double weightUsed;
+    private String muscleGroup;
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -25,4 +26,7 @@ public class Exercise {
 
     public double getWeightUsed() { return weightUsed; }
     public void setWeightUsed(double weightUsed) { this.weightUsed = weightUsed; }
+
+    public String getMuscleGroup() { return muscleGroup; }
+    public void setMuscleGroup(String muscleGroup) { this.muscleGroup = muscleGroup; }
 }
