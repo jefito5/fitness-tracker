@@ -245,14 +245,14 @@ public class MealIUD {
 			else{
 			Meal m = new Meal();
 			m.setMealName(txtmealname.getText());
-			int text_2=Integer.parseInt(txtcalorieG.getText());
+			double text_2=Double.parseDouble(txtcalorieG.getText());
 			m.setCaloriesPerGram(text_2);
 			
 			MealDB udb=new MealDB();
 			udb.insertMeal(m);
 			//int rowUpdate= udb.insert(m);
 			//if(rowUpdate>0){
-			JOptionPane.showMessageDialog(null, "Meal Added!");	
+			JOptionPane.showMessageDialog(null, "Meal Added!\nCalorie per gram: " + text_2 + " kcal/g");	
 			
 				txtmealname.setText("");
 				txtcalorieG.setText("");

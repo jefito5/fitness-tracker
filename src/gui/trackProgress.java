@@ -67,13 +67,14 @@ public class trackProgress {
 		currentViewDate = String.valueOf(LocalDate.now());
 		initialize();
 		Show_Meals_In_JTable();
-		Show_Exercise_In_JTable();		
+		Show_Exercise_In_JTable();
+		Show_MealLog_In_JTable();
 	}
 
 	private void initialize() {
 		trackFrame = new JFrame();
 		trackFrame.setTitle("Daily Record");
-		trackFrame.setBounds(100, 100, 664, 651);
+		trackFrame.setBounds(100, 100, 664, 670);
 		trackFrame.setLocation(380, 10);
 		trackFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		trackFrame.getContentPane().setLayout(null);
@@ -181,7 +182,7 @@ public class trackProgress {
 
                 },
                 new String [] {
-                   "Meal ID", "Meals Name", "Calorie Per Gram"
+                   "Meal ID", "Meals Name", "Calorie Per Gram", "Total kcal"
                 }
             ));
             table.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -362,20 +363,26 @@ public class trackProgress {
 	}
 	   public void Show_Meals_In_JTable()
 	   {
-		   
 		   MealDB udb=new MealDB();
 	       List<Meal> meals = udb.getAll();
-	    	   
+
+		   MealLogDB logDB = new MealLogDB();
+		   java.util.ArrayList<Object[]> logs = logDB.getTodayMealLogs(get);
+		   java.util.HashMap<Integer, Double> mealCalories = new java.util.HashMap<>();
+		   for (Object[] log : logs) {
+			   int mealId = (int) log[0];
+			   mealCalories.merge(mealId, (double) log[3], Double::sum);
+		   }
+
 	       DefaultTableModel model = (DefaultTableModel)table.getModel();
 	       Object[] row = new Object[4];
 	       for(int i = 0; i < meals.size(); i++)
 	       {
 	           row[0]=meals.get(i).getId();
-	          
 	           row[1] = meals.get(i).getName();
 	           row[2] = meals.get(i).getCaloriesPerGram();
-	           
-	           
+			   Double total = mealCalories.get(meals.get(i).getId());
+			   row[3] = total != null ? String.format("%.1f", total) : "-";
 	           model.addRow(row);
 	       }
 	    }
@@ -444,6 +451,12 @@ public class trackProgress {
 		   dateComboBox.setSelectedItem(currentViewDate);
 	   }
 	
+	   public void Show_MealLog_In_JTable() {
+		   DefaultTableModel model = (DefaultTableModel)table.getModel();
+		   model.setRowCount(0);
+		   Show_Meals_In_JTable();
+	   }
+
 	   private int selectedExerciseId = -1;
 
 	   private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {
@@ -751,11 +764,13 @@ class InsertWeightListener implements ActionListener{
 								//JOptionPane.showMessageDialog(null, rowUpdate);
 								
 								if(rowUpdate>0){
-								JOptionPane.showMessageDialog(null, "Your Meal Log Added!");	
-								
+								JOptionPane.showMessageDialog(null,
+									"Your Meal Log Added!\nTotal calories: " + String.format("%.1f", totalCalorie) + " kcal");
+
 									txtmealcalorie.setText("");
 									txtintake.setText("");
 									txtmealName.setText("");
+									Show_MealLog_In_JTable();
 									
 								}
 								else{
