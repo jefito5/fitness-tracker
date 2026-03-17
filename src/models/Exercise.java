@@ -7,10 +7,6 @@ public class Exercise {
     private String workoutType;        // "Cardio" or "Strength"
     private int reps;                  // Strength only
     private double weightUsed;         // Strength only (kg)
-    private String muscleGroup;    // Primary muscle group targeted (e.g., "Chest", "Back", "Legs", "Arms", "Shoulders", "Core")
-
-    public String getMuscleGroup() { return muscleGroup; }
-    public void setMuscleGroup(String muscleGroup) { this.muscleGroup = muscleGroup; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
