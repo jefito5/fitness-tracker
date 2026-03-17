@@ -4,12 +4,16 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
 
 import java.awt.Font;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import javax.swing.JTextField;
@@ -53,10 +57,14 @@ public class trackProgress {
 	private JTextField exerciseID;
 	private JButton btnDeleteE;
 	private JTextField txtuserid;
+	private JComboBox<String> dateComboBox;
+	private JLabel lblSelectedDate;
+	private String currentViewDate;
 	private int get;
 
 	public trackProgress(int gets) {
 		get=gets;
+		currentViewDate = String.valueOf(LocalDate.now());
 		initialize();
 		Show_Meals_In_JTable();
 		Show_Exercise_In_JTable();		
@@ -301,7 +309,54 @@ public class trackProgress {
 				trackFrame.setVisible(false);
 			}
 		});
-		
+
+		// ── ISTORIJOS DATOS PASIRINKIMAS ──────────────────────────────────────
+		JLabel lblHistory = new JLabel("Istorija:");
+		lblHistory.setFont(new Font("Verdana", Font.BOLD, 13));
+		lblHistory.setBounds(330, 462, 80, 20);
+		trackFrame.getContentPane().add(lblHistory);
+
+		dateComboBox = new JComboBox<>();
+		dateComboBox.setBounds(330, 488, 160, 25);
+		trackFrame.getContentPane().add(dateComboBox);
+
+		JButton btnLoadHistory = new JButton("Rodyti");
+		btnLoadHistory.setBounds(498, 488, 80, 25);
+		trackFrame.getContentPane().add(btnLoadHistory);
+
+		JButton btnTodayBtn = new JButton("Šiandien");
+		btnTodayBtn.setBounds(330, 520, 110, 25);
+		trackFrame.getContentPane().add(btnTodayBtn);
+
+		lblSelectedDate = new JLabel("Rodoma: " + currentViewDate);
+		lblSelectedDate.setFont(new Font("Verdana", Font.ITALIC, 11));
+		lblSelectedDate.setForeground(Color.BLUE);
+		lblSelectedDate.setBounds(330, 550, 200, 20);
+		trackFrame.getContentPane().add(lblSelectedDate);
+
+		// Užpildyti datos sąrašą
+		refreshDateComboBox();
+
+		btnLoadHistory.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String selected = (String) dateComboBox.getSelectedItem();
+				if (selected != null && !selected.isEmpty()) {
+					currentViewDate = selected;
+					lblSelectedDate.setText("Rodoma: " + currentViewDate);
+					Show_Exercise_In_JTable();
+				}
+			}
+		});
+
+		btnTodayBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				currentViewDate = String.valueOf(LocalDate.now());
+				lblSelectedDate.setText("Rodoma: " + currentViewDate);
+				refreshDateComboBox();
+				Show_Exercise_In_JTable();
+			}
+		});
+		// ─────────────────────────────────────────────────────────────────────
 		
 		trackFrame.setVisible(true);
 	}
@@ -344,7 +399,13 @@ public class trackProgress {
 	   public void Show_Exercise_In_JTable()
 	   {
 		   ExerciseLogDB logDB = new ExerciseLogDB();
-		   java.util.ArrayList<Object[]> logs = logDB.getTodayLogs(get);
+		   java.util.ArrayList<Object[]> logs;
+		   // Rodyti pasirinktą datą (arba šiandien, jei nenustatyta)
+		   if (currentViewDate != null && !currentViewDate.isEmpty()) {
+			   logs = logDB.getLogsByDate(get, currentViewDate);
+		   } else {
+			   logs = logDB.getTodayLogs(get);
+		   }
 	       DefaultTableModel model = (DefaultTableModel)table2.getModel();
 	       model.setRowCount(0);
 	       for (Object[] lr : logs) {
@@ -365,6 +426,21 @@ public class trackProgress {
 	           model.addRow(new Object[]{lr[0], lr[1], info, calories});
 	       }
 	    }
+
+	   /** Atnaujina datos pasirinkimo sąrašą iš duomenų bazės */
+	   private void refreshDateComboBox() {
+		   if (dateComboBox == null) return;
+		   ExerciseLogDB logDB = new ExerciseLogDB();
+		   java.util.ArrayList<String> dates = logDB.getAllLogDates(get);
+		   DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+		   // Visada pridėti šiandieną viršuje
+		   String today = String.valueOf(LocalDate.now());
+		   if (!dates.contains(today)) dates.add(0, today);
+		   for (String d : dates) model.addElement(d);
+		   dateComboBox.setModel(model);
+		   // Pasirinkti esamą datą
+		   dateComboBox.setSelectedItem(currentViewDate);
+	   }
 	
 	   private int selectedExerciseId = -1;
 
