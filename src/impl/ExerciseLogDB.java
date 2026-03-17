@@ -89,7 +89,7 @@ public class ExerciseLogDB implements IdailyElogDB  {
 		java.util.ArrayList<Object[]> list = new java.util.ArrayList<>();
 		LocalDate today = LocalDate.now();
 		String sql =
-			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes " +
+			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes, e.muscleGroup " +
 			"FROM DailyExerciseLog del " +
 			"JOIN exercise e ON del.exerciseID = e.id " +
 			"WHERE del.userId = ? AND del.Date = ?";
@@ -106,7 +106,8 @@ public class ExerciseLogDB implements IdailyElogDB  {
 					rs.getDouble("totalCalorieBurn"),
 					rs.getInt("reps"),
 					rs.getDouble("weightUsed"),
-					rs.getDouble("durationMinutes")
+					rs.getDouble("durationMinutes"),
+					rs.getString("muscleGroup")
 				});
 			}
 		} catch (SQLException e) { e.printStackTrace(); }
@@ -131,7 +132,7 @@ public class ExerciseLogDB implements IdailyElogDB  {
 	public java.util.ArrayList<Object[]> getLogsByDate(int userId, String date) {
 		java.util.ArrayList<Object[]> list = new java.util.ArrayList<>();
 		String sql =
-			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes " +
+			"SELECT del.id, e.ExerciseName, e.workoutType, del.totalCalorieBurn, e.reps, e.weightUsed, del.durationMinutes, e.muscleGroup " +
 			"FROM DailyExerciseLog del " +
 			"JOIN exercise e ON del.exerciseID = e.id " +
 			"WHERE del.userId = ? AND del.Date = ?";
@@ -148,7 +149,8 @@ public class ExerciseLogDB implements IdailyElogDB  {
 					rs.getDouble("totalCalorieBurn"),
 					rs.getInt("reps"),
 					rs.getDouble("weightUsed"),
-					rs.getDouble("durationMinutes")
+					rs.getDouble("durationMinutes"),
+					rs.getString("muscleGroup")
 				});
 			}
 		} catch (SQLException e) { e.printStackTrace(); }

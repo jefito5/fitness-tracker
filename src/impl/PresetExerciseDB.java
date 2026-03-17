@@ -13,9 +13,11 @@ import java.util.ArrayList;
 public class PresetExerciseDB {
 
     public void seedIfEmpty() {
+        Connection conn = ConnectionFactory.getConnection();
         try {
-            Connection conn = ConnectionFactory.getConnection();
+            conn.setAutoCommit(true);
 
+            // Sukurti lentelę jei nėra
             conn.createStatement().execute(
                 "CREATE TABLE IF NOT EXISTS preset_exercises (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -29,17 +31,17 @@ public class PresetExerciseDB {
             addColumnIfMissing(conn, "exercise", "reps", "INTEGER DEFAULT 0");
             addColumnIfMissing(conn, "exercise", "weightUsed", "REAL DEFAULT 0");
 
-            Statement countStmt = conn.createStatement();
-            ResultSet rs = countStmt.executeQuery("SELECT COUNT(*) FROM preset_exercises");
+            // Patikrinti ar jau yra duomenų
+            ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM preset_exercises");
             boolean hasData = rs.next() && rs.getInt(1) > 0;
             rs.close();
-            countStmt.close();
             if (hasData) return;
 
+            // Įkelti duomenis
             InputStream is = getClass().getClassLoader().getResourceAsStream("exercises.json");
             if (is == null) is = getClass().getResourceAsStream("/exercises.json");
             if (is == null) {
-                for (String path : new String[]{"src/resources/exercises.json","resources/exercises.json","exercises.json"}) {
+                for (String path : new String[]{"src/resources/exercises.json", "resources/exercises.json", "exercises.json"}) {
                     File f = new File(path);
                     if (f.exists()) { is = new FileInputStream(f); break; }
                 }
@@ -48,23 +50,23 @@ public class PresetExerciseDB {
             if (is == null) {
                 System.out.println(">>> exercises.json not found, using fallback <<<");
                 seedFallback(conn);
-                return;
+            } else {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                byte[] chunk = new byte[1024];
+                int n;
+                while ((n = is.read(chunk)) != -1) buffer.write(chunk, 0, n);
+                seedFromJson(conn, buffer.toString("UTF-8"));
+                System.out.println(">>> Preset exercises loaded from exercises.json <<<");
             }
-
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] chunk = new byte[1024];
-            int n;
-            while ((n = is.read(chunk)) != -1) buffer.write(chunk, 0, n);
-            seedFromJson(conn, buffer.toString("UTF-8"));
-            System.out.println(">>> Preset exercises loaded from exercises.json <<<");
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try { conn.setAutoCommit(true); } catch (Exception ignored) {}
         }
     }
 
     private void seedFromJson(Connection conn, String json) throws Exception {
-        boolean prevAutoCommit = conn.getAutoCommit();
         conn.setAutoCommit(false);
         try {
             PreparedStatement ps = conn.prepareStatement(
@@ -92,36 +94,11 @@ public class PresetExerciseDB {
             conn.rollback();
             throw e;
         } finally {
-            conn.setAutoCommit(prevAutoCommit);
+            conn.setAutoCommit(true);
         }
-    }
-
-    private String extractStr(String obj, String key) {
-        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return null;
-        int s = obj.indexOf("\"", i + key.length() + 3); if (s < 0) return null;
-        int e = obj.indexOf("\"", s + 1); if (e < 0) return null;
-        return obj.substring(s + 1, e);
-    }
-    private String extractArr(String obj, String key) {
-        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return null;
-        int a = obj.indexOf("[", i); if (a < 0) return null;
-        int s = obj.indexOf("\"", a); if (s < 0) return null;
-        int e = obj.indexOf("\"", s + 1); if (e < 0) return null;
-        return obj.substring(s + 1, e);
-    }
-    private double extractDbl(String obj, String key) {
-        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return 0;
-        int c = obj.indexOf(":", i); if (c < 0) return 0;
-        StringBuilder num = new StringBuilder();
-        for (char ch : obj.substring(c + 1).trim().toCharArray()) {
-            if (Character.isDigit(ch) || ch == '.') num.append(ch);
-            else if (num.length() > 0) break;
-        }
-        try { return num.length() > 0 ? Double.parseDouble(num.toString()) : 0; } catch (Exception e) { return 0; }
     }
 
     private void seedFallback(Connection conn) throws Exception {
-        boolean prevAutoCommit = conn.getAutoCommit();
         conn.setAutoCommit(false);
         try {
             PreparedStatement ps = conn.prepareStatement(
@@ -148,38 +125,61 @@ public class PresetExerciseDB {
                 {"Stair Climber","Cardio","",8.0}, {"HIIT","Cardio","",10.0},
             };
             for (Object[] r : data) {
-                ps.setString(1,(String)r[0]); ps.setString(2,(String)r[1]);
-                ps.setString(3,(String)r[2]);
-                ps.setDouble(4, ((Number)r[3]).doubleValue()); // FIX: Number cast
+                ps.setString(1, (String) r[0]);
+                ps.setString(2, (String) r[1]);
+                ps.setString(3, (String) r[2]);
+                ps.setDouble(4, ((Number) r[3]).doubleValue());
                 ps.addBatch();
             }
             ps.executeBatch();
-            conn.commit(); // FIX: commit po batch
+            conn.commit();
             System.out.println(">>> Fallback: " + data.length + " exercises seeded <<<");
         } catch (Exception e) {
             conn.rollback();
             throw e;
         } finally {
-            conn.setAutoCommit(prevAutoCommit);
+            conn.setAutoCommit(true);
         }
     }
 
     private void addColumnIfMissing(Connection conn, String table, String column, String definition) {
         try {
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery("PRAGMA table_info(" + table + ")");
+            ResultSet rs = conn.createStatement().executeQuery("PRAGMA table_info(" + table + ")");
             boolean found = false;
             while (rs.next()) {
                 if (rs.getString("name").equalsIgnoreCase(column)) { found = true; break; }
             }
             rs.close();
-            st.close();
             if (!found) {
                 conn.createStatement().execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private String extractStr(String obj, String key) {
+        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return null;
+        int s = obj.indexOf("\"", i + key.length() + 3); if (s < 0) return null;
+        int e = obj.indexOf("\"", s + 1); if (e < 0) return null;
+        return obj.substring(s + 1, e);
+    }
+    private String extractArr(String obj, String key) {
+        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return null;
+        int a = obj.indexOf("[", i); if (a < 0) return null;
+        int s = obj.indexOf("\"", a); if (s < 0) return null;
+        int e = obj.indexOf("\"", s + 1); if (e < 0) return null;
+        return obj.substring(s + 1, e);
+    }
+    private double extractDbl(String obj, String key) {
+        int i = obj.indexOf("\"" + key + "\""); if (i < 0) return 0;
+        int c = obj.indexOf(":", i); if (c < 0) return 0;
+        StringBuilder num = new StringBuilder();
+        for (char ch : obj.substring(c + 1).trim().toCharArray()) {
+            if (Character.isDigit(ch) || ch == '.') num.append(ch);
+            else if (num.length() > 0) break;
+        }
+        try { return num.length() > 0 ? Double.parseDouble(num.toString()) : 0; } catch (Exception e) { return 0; }
     }
 
     public ArrayList<PresetExercise> getByType(String workoutType) {

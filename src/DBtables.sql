@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS exercise (
     CalorieburnPerMin REAL,
     workoutType TEXT DEFAULT 'Cardio',
     reps INTEGER DEFAULT 0,
-    weightUsed REAL DEFAULT 0
+    weightUsed REAL DEFAULT 0,
+    muscleGroup TEXT DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS preset_exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -209,7 +209,7 @@ public class trackProgress {
 
                 },
                 new String [] {
-                   "Log ID", "Exercise Name", "Info", "Calories"
+                   "Log ID", "Exercise Name", "Muscle Group", "Info", "Calories"
                 }
             ));
             table2.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -411,6 +411,8 @@ public class trackProgress {
 	       for (Object[] lr : logs) {
 	           // lr: [0]=logId, [1]=name, [2]=type, [3]=totalKcal, [4]=reps, [5]=weightKg, [6]=durationMin
 	           String type = (String) lr[2];
+	           String muscleGroup = lr[7] != null ? (String) lr[7] : "General";
+	           if (muscleGroup.isEmpty()) muscleGroup = "General";
 	           String info;
 	           String calories;
 	           if ("Strength".equals(type)) {
@@ -423,7 +425,7 @@ public class trackProgress {
 	               info     = mins + " min";
 	               calories = String.format("%.0f kcal", (double) lr[3]);
 	           }
-	           model.addRow(new Object[]{lr[0], lr[1], info, calories});
+	           model.addRow(new Object[]{lr[0], lr[1], muscleGroup, info, calories});
 	       }
 	    }
 

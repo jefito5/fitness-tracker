@@ -26,6 +26,11 @@ public class ConnectionFactory {
             try {
                 new ConnectionFactory();
                 conn = DriverManager.getConnection(URI);
+                // WAL režimas prieš viską - mažina locking problemų tikimybę
+                Statement pragmaStmt = conn.createStatement();
+                pragmaStmt.execute("PRAGMA journal_mode=WAL");
+                pragmaStmt.execute("PRAGMA busy_timeout=5000");
+                pragmaStmt.close();
                 conn.setAutoCommit(true);
                 createTablesFromFile();
             } catch (SQLException ex) {
@@ -45,18 +50,21 @@ public class ConnectionFactory {
         try {
             String sqlContent = Files.readString(Paths.get("src/DBtables.sql"));
             String[] sqlCommands = sqlContent.split(";");
-            
+
+            conn.setAutoCommit(false);
             Statement stmt = conn.createStatement();
-            
             for (String command : sqlCommands) {
                 if (!command.trim().isEmpty()) {
                     stmt.execute(command);
                 }
             }
+            stmt.close();
+            conn.commit();
+            conn.setAutoCommit(true);
             System.out.println(">>> Lentelės sėkmingai sukurtos iš DBtables.sql failo! <<<");
-            
         } catch (Exception e) {
             System.out.println(">>> Klaida nuskaitant DBtables.sql failą <<<:" + e.getMessage());
+            try { conn.rollback(); conn.setAutoCommit(true); } catch (Exception ignored) {}
         }
     }
 
