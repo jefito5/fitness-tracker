@@ -74,7 +74,7 @@ public class trackProgress {
 	private void initialize() {
 		trackFrame = new JFrame();
 		trackFrame.setTitle("Daily Record");
-		trackFrame.setBounds(100, 100, 664, 670);
+		trackFrame.setBounds(100, 100, 800, 720);
 		trackFrame.setLocation(380, 10);
 		trackFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		trackFrame.getContentPane().setLayout(null);
@@ -337,6 +337,7 @@ public class trackProgress {
 					currentViewDate = selected;
 					lblSelectedDate.setText("Viewing: " + currentViewDate);
 					Show_Exercise_In_JTable();
+					Show_MealLog_In_JTable();
 				}
 			}
 		});
@@ -347,6 +348,7 @@ public class trackProgress {
 				lblSelectedDate.setText("Viewing: " + currentViewDate);
 				refreshDateComboBox();
 				Show_Exercise_In_JTable();
+				Show_MealLog_In_JTable();
 			}
 		});
 		// ─────────────────────────────────────────────────────────────────────
@@ -355,27 +357,15 @@ public class trackProgress {
 	}
 	   public void Show_Meals_In_JTable()
 	   {
-		   MealDB udb=new MealDB();
-	       List<Meal> meals = udb.getAll();
-
+		   // Rodyti tik tos dienos maisto log'us — ta pati logika kaip pratimų
 		   MealLogDB logDB = new MealLogDB();
-		   java.util.ArrayList<Object[]> logs = logDB.getTodayMealLogs(get);
-		   java.util.HashMap<Integer, Double> mealCalories = new java.util.HashMap<>();
-		   for (Object[] log : logs) {
-			   int mealId = (int) log[0];
-			   mealCalories.merge(mealId, (double) log[3], Double::sum);
-		   }
+		   java.util.ArrayList<Object[]> logs = logDB.getMealLogsByDate(get, currentViewDate);
 
 	       DefaultTableModel model = (DefaultTableModel)table.getModel();
-	       Object[] row = new Object[4];
-	       for(int i = 0; i < meals.size(); i++)
-	       {
-	           row[0]=meals.get(i).getId();
-	           row[1] = meals.get(i).getName();
-	           row[2] = meals.get(i).getCaloriesPerGram();
-			   Double total = mealCalories.get(meals.get(i).getId());
-			   row[3] = total != null ? String.format("%.1f", total) : "-";
-	           model.addRow(row);
+	       model.setRowCount(0);
+	       for (Object[] log : logs) {
+			   // log: [0]=mealID, [1]=MealName, [2]=CaloriePerGram, [3]=totalCalorieIntake
+			   model.addRow(new Object[]{log[0], log[1], log[2], String.format("%.1f", (double)log[3])});
 	       }
 	    }
 	
