@@ -6,6 +6,8 @@ import javax.swing.border.MatteBorder;
 
 //import gui.MealIUD.InsertMealListener.InsertExerciseListener;
 import impl.MealDB;
+import impl.MealLogDB;
+import models.DailyMealLog;
 import impl.UserDB;
 import models.Meal;
 import models.User;
@@ -27,6 +29,7 @@ public class MealIUD {
 	private JFrame frame;
 	private JTextField txtmealname;
 	private JTextField txtcalorieG;
+	private JTextField txtweight;
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
@@ -52,7 +55,7 @@ public class MealIUD {
 	private void initialize() {
 		frame = new JFrame();
 		frame.setFont(new Font("Verdana", Font.PLAIN, 25));
-		frame.setBounds(100, 100, 650, 480);
+		frame.setBounds(100, 100, 700, 560);
 		frame.setLocation(400,100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -106,7 +109,7 @@ public class MealIUD {
 		lblNewLabel_1.setBounds(10, 332, 100, 23);
 		frame.getContentPane().add(lblNewLabel_1);
 		
-		JLabel lblCaloriegram = new JLabel("Calorie/gram:");
+		JLabel lblCaloriegram = new JLabel("Calories/100g:");
 		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
 		lblCaloriegram.setBounds(10, 373, 120, 23);
 		frame.getContentPane().add(lblCaloriegram);
@@ -116,8 +119,18 @@ public class MealIUD {
 		txtcalorieG.setBounds(140, 366, 156, 30);
 		frame.getContentPane().add(txtcalorieG);
 		
+		JLabel lblWeight = new JLabel("Weight (g):");
+		lblWeight.setFont(new Font("Verdana", Font.PLAIN, 15));
+		lblWeight.setBounds(10, 407, 120, 23);
+		frame.getContentPane().add(lblWeight);
+
+		txtweight = new JTextField();
+		txtweight.setColumns(10);
+		txtweight.setBounds(140, 404, 156, 30);
+		frame.getContentPane().add(txtweight);
+
 		JButton btnInsert = new JButton("INSERT MEAL");
-		btnInsert.setBounds(76, 407, 120, 23);
+		btnInsert.setBounds(76, 470, 120, 23);
 		frame.getContentPane().add(btnInsert);
 		btnInsert.addActionListener(new InsertMealListener());
 		
@@ -243,19 +256,35 @@ public class MealIUD {
 				JOptionPane.showMessageDialog(null, "The fields cannot be empty!!");
 			}
 			else{
+			if (txtweight.getText().isEmpty()) {
+				JOptionPane.showMessageDialog(null, "Please enter weight in grams!");
+				return;
+			}
+			double grams = Double.parseDouble(txtweight.getText());
+			double kcalPer100g = Double.parseDouble(txtcalorieG.getText());
+			double totalKcal = kcalPer100g * grams / 100.0;
+
+			// 1. Issaugoti i meals kataloga
 			Meal m = new Meal();
 			m.setMealName(txtmealname.getText());
-			double text_2=Double.parseDouble(txtcalorieG.getText());
-			m.setCaloriesPerGram(text_2);
-			
-			MealDB udb=new MealDB();
-			udb.insertMeal(m);
-			//int rowUpdate= udb.insert(m);
-			//if(rowUpdate>0){
-			JOptionPane.showMessageDialog(null, "Meal Added!\nCalorie per gram: " + text_2 + " kcal/g");	
-			
+			m.setCaloriesPerGram(kcalPer100g);
+			MealDB udb = new MealDB();
+			int mealId = udb.insertMeal(m);
+
+			// 2. Issaugoti i DailyMealLog
+			DailyMealLog dml = new DailyMealLog();
+			dml.setMealId(mealId);
+			dml.setUserId(ids);
+			dml.setTotalCalorieIntake(totalKcal);
+			new MealLogDB().insertDailyLog(dml);
+
+			JOptionPane.showMessageDialog(null,
+				"Meal Added!\n" + txtmealname.getText() +
+				"\n" + grams + "g = " + String.format("%.1f", totalKcal) + " kcal");
+
 				txtmealname.setText("");
 				txtcalorieG.setText("");
+				txtweight.setText("");
 			/*}
 			else{
 				JOptionPane.showMessageDialog(null, "Failed to Add Meal!!");
