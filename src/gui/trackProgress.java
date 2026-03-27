@@ -197,11 +197,11 @@ public class trackProgress {
 		
 		JLabel lblAddYourExercise = new JLabel("Today's Exercises");
 		lblAddYourExercise.setFont(new Font("Tahoma", Font.PLAIN, 17));
-		lblAddYourExercise.setBounds(329, 234, 233, 23);
+		lblAddYourExercise.setBounds(380, 234, 233, 23);
 		trackFrame.getContentPane().add(lblAddYourExercise);
 		
 	JScrollPane exercise = new JScrollPane();
-		exercise.setBounds(330, 268, 308, 186);
+		exercise.setBounds(380, 268, 308, 186);
 		trackFrame.getContentPane().add(exercise);
 		
 		table2=new JTable();
@@ -265,7 +265,7 @@ public class trackProgress {
 		
 		JLabel lblCaloriegram = new JLabel("Calories/100g:");
 		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblCaloriegram.setBounds(30, 503, 107, 14);
+		lblCaloriegram.setBounds(30, 503, 130, 20);
 		trackFrame.getContentPane().add(lblCaloriegram);
 		
 		JLabel lblAmount = new JLabel("Amount (g):");
@@ -290,7 +290,7 @@ public class trackProgress {
 		btnDelete.addActionListener(new DeleteMealListener());
 		
 		btnDeleteE = new JButton("Delete");
-		btnDeleteE.setBounds(330, 462, 100, 28);
+		btnDeleteE.setBounds(380, 462, 100, 28);
 		trackFrame.getContentPane().add(btnDeleteE);
 		btnDeleteE.addActionListener(new DeleteExerciseListener());
 
@@ -306,25 +306,25 @@ public class trackProgress {
 		// ── HISTORY DATE SELECTOR ───────────────────────────────────────────
 		JLabel lblHistory = new JLabel("History:");
 		lblHistory.setFont(new Font("Verdana", Font.BOLD, 13));
-		lblHistory.setBounds(330, 462, 80, 20);
+		lblHistory.setBounds(490, 462, 80, 20);
 		trackFrame.getContentPane().add(lblHistory);
 
 		dateComboBox = new JComboBox<>();
-		dateComboBox.setBounds(330, 488, 160, 25);
+		dateComboBox.setBounds(380, 488, 160, 25);
 		trackFrame.getContentPane().add(dateComboBox);
 
 		JButton btnLoadHistory = new JButton("Show");
-		btnLoadHistory.setBounds(498, 488, 80, 25);
+		btnLoadHistory.setBounds(548, 488, 80, 25);
 		trackFrame.getContentPane().add(btnLoadHistory);
 
 		JButton btnTodayBtn = new JButton("Today");
-		btnTodayBtn.setBounds(330, 520, 110, 25);
+		btnTodayBtn.setBounds(380, 520, 110, 25);
 		trackFrame.getContentPane().add(btnTodayBtn);
 
 		lblSelectedDate = new JLabel("Viewing: " + currentViewDate);
 		lblSelectedDate.setFont(new Font("Verdana", Font.ITALIC, 11));
 		lblSelectedDate.setForeground(Color.BLUE);
-		lblSelectedDate.setBounds(330, 550, 200, 20);
+		lblSelectedDate.setBounds(380, 550, 200, 20);
 		trackFrame.getContentPane().add(lblSelectedDate);
 
 		// Populate date list
@@ -721,51 +721,53 @@ class InsertWeightListener implements ActionListener{
 						// Daily meal log entry			   
 						class InsertDailymealListener implements ActionListener{
 
-							@Override
-							public void actionPerformed(ActionEvent e) {
-								try{
-								if(mealsID.getText().isEmpty() || txtmealcalorie.getText().isEmpty() 
-								|| txtintake.getText().isEmpty()
-										|| txtmealName.getText().isEmpty()){
-									JOptionPane.showMessageDialog(null, "The fields can not be empty");
-								}
-								else{
-								DailyMealLog dml = new DailyMealLog();
-								double calorieIntake=Double.parseDouble(txtmealcalorie.getText());
-								double mealAmount=Double.parseDouble(txtintake.getText());
-								double totalCalorie=(calorieIntake / 100.0) * mealAmount; // kcal/100g * grams
-								
-								dml.setTotalCalorieIntake(totalCalorie);
-								int user_id=Integer.parseInt(txtuserid.getText());
-								dml.setUserId(user_id);
-								int meal_id=Integer.parseInt(mealsID.getText());
-								dml.setMealId(meal_id);
-								
-								MealLogDB udb=new MealLogDB();
-								int rowUpdate= udb.insertDailyLog(dml);
-								//JOptionPane.showMessageDialog(null, rowUpdate);
-								
-								if(rowUpdate>0){
-								JOptionPane.showMessageDialog(null,
-									"Your Meal Log Added!\nTotal calories: " + String.format("%.1f", totalCalorie) + " kcal");
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                try{
+                                    // Ištaisyta: Nebetikriname mealsID.getText().isEmpty()
+                                    if(txtmealcalorie.getText().isEmpty() || txtintake.getText().isEmpty() || txtmealName.getText().isEmpty()){
+                                        JOptionPane.showMessageDialog(null, "The fields can not be empty");
+                                    }
+                                    else{
+                                        double calorieIntake=Double.parseDouble(txtmealcalorie.getText());
+                                        double mealAmount=Double.parseDouble(txtintake.getText());
+                                        double totalCalorie=(calorieIntake / 100.0) * mealAmount; 
+                                        
+                                        // 1. Sukuriame naują maistą Meals lentelėje ir gauname jo ID
+                                        Meal m = new Meal();
+                                        m.setMealName(txtmealName.getText());
+                                        m.setCaloriesPerGram(calorieIntake);
+                                        MealDB mdb = new MealDB();
+                                        int generatedMealId = mdb.insertMeal(m);
 
-									txtmealcalorie.setText("");
-									txtintake.setText("");
-									txtmealName.setText("");
-									Show_MealLog_In_JTable();
-									
-								}
-								else{
-									JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
-								}
-								}
-								}
-								catch(NumberFormatException ee){
-									JOptionPane.showConfirmDialog(null, "Please enter numeric value",
-								"Invalid input", JOptionPane.CANCEL_OPTION);
-								}
-								
-								
-							}
-							}
+                                        // 2. Išsaugome suvartojimo istoriją (Log'ą) naudodami NAUJĄ ID
+                                        DailyMealLog dml = new DailyMealLog();
+                                        dml.setTotalCalorieIntake(totalCalorie);
+                                        int user_id=Integer.parseInt(txtuserid.getText());
+                                        dml.setUserId(user_id);
+                                        dml.setMealId(generatedMealId); // Štai čia priskiriamas naujasis ID!
+                                        
+                                        MealLogDB udb=new MealLogDB();
+                                        int rowUpdate= udb.insertDailyLog(dml);
+                                        
+                                        if(rowUpdate>0){
+                                            JOptionPane.showMessageDialog(null,
+                                                "Your Meal Log Added!\nTotal calories: " + String.format("%.1f", totalCalorie) + " kcal");
+
+                                            txtmealcalorie.setText("");
+                                            txtintake.setText("");
+                                            txtmealName.setText("");
+                                            Show_MealLog_In_JTable();
+                                        }
+                                        else{
+                                            JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
+                                        }
+                                    }
+                                }
+                                catch(NumberFormatException ee){
+                                    JOptionPane.showConfirmDialog(null, "Please enter numeric value",
+                                "Invalid input", JOptionPane.CANCEL_OPTION);
+                                }
+                            }
+                        }
 }

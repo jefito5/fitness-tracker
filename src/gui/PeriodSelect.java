@@ -55,7 +55,7 @@ public class PeriodSelect {
 	private void initialize() {
 		frame = new JFrame("Analyse");
 		frame.getContentPane().setFont(new Font("Tahoma", Font.PLAIN, 12));
-		frame.setSize(499, 280);
+		frame.setSize(499, 580);
 		frame.setLocation(500,100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -109,7 +109,7 @@ public class PeriodSelect {
 		 comboBox = new JComboBox();
 		comboBox.setBounds(10, 167, 59, 20);
 		frame.getContentPane().add(comboBox);
-		for(int i=2018;i<=2027;i++){
+		for(int i=2026;i<=2032;i++){
 		comboBox.addItem(i);
 		}
 					
@@ -135,7 +135,7 @@ public class PeriodSelect {
 		 comboBox_3 = new JComboBox();
 		comboBox_3.setBounds(280, 167, 59, 20);
 		frame.getContentPane().add(comboBox_3);
-		for(int i=2018;i<=2027;i++){
+		for(int i=2026;i<=2032;i++){
 			comboBox_3.addItem(i);
 		}
 		
@@ -277,7 +277,7 @@ public class PeriodSelect {
 		btnViewChart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int asd=Integer.parseInt(txtUserid.getText());
-				//new TrendLine(asd);
+				new TrendLine(asd);
 				frame.setVisible(false);
 				
 			}
