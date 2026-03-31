@@ -113,23 +113,35 @@ public class WeightDB implements IweightDB{
 	public ArrayList<Double> getAverages() {
 		ArrayList<Double> gets=new ArrayList<>();
 		LocalDate today=LocalDate.now();
+		// Try today's average first
 		String sql="select * from weights where Date=?";
 		try{
 			PreparedStatement pstmt=conn.prepareStatement(sql);
-			//Weight wt=new Weight();
-			User u=new User();
 			String asd=String.valueOf(today);
 			pstmt.setObject(1, asd);
-			//pstmt.setInt(2, u.getId());
 
 			ResultSet rs=pstmt.executeQuery();
 			while(rs.next()){
 				gets.add(rs.getDouble("average"));
-				//gets.add(rs.getDouble("WeightM"));
 			}
 		}
 		catch(SQLException e){
 			e.printStackTrace();
+		}
+		// If no weight for today, fall back to the most recent entry
+		if(gets.isEmpty() || gets.get(0)==0){
+			gets.clear();
+			String fallback="select WeightM from weights ORDER BY Date DESC LIMIT 1";
+			try{
+				PreparedStatement pstmt=conn.prepareStatement(fallback);
+				ResultSet rs=pstmt.executeQuery();
+				if(rs.next()){
+					gets.add(rs.getDouble("WeightM"));
+				}
+			}
+			catch(SQLException e){
+				e.printStackTrace();
+			}
 		}
 		return gets;
 	}

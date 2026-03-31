@@ -290,12 +290,11 @@ public class PeriodSelect {
 				activityLevelSelection();
 				try{
 				String aa=comboBox.getSelectedItem().toString();
-				String bb=comboBox_1.getSelectedItem().toString();
-				String cc=comboBox_2.getSelectedItem().toString();
+				String bb=String.format("%02d", Integer.parseInt(comboBox_1.getSelectedItem().toString()));
+				String cc=String.format("%02d", Integer.parseInt(comboBox_2.getSelectedItem().toString()));
 				String dd=comboBox_3.getSelectedItem().toString();
-				String ee=comboBox_4.getSelectedItem().toString();
-				String ff=comboBox_5.getSelectedItem().toString();
-				//System.out.println(aa+"-"+bb+"-"+cc);
+				String ee=String.format("%02d", Integer.parseInt(comboBox_4.getSelectedItem().toString()));
+				String ff=String.format("%02d", Integer.parseInt(comboBox_5.getSelectedItem().toString()));
 				Weight wt=new Weight();
 				wt.setPeriod1(aa+"-"+bb+"-"+cc);
 				wt.setPeriod2(dd+"-"+ee+"-"+ff);
@@ -346,18 +345,22 @@ public class PeriodSelect {
 		int user_id=Integer.parseInt(txtUserid.getText());
 		User u=udb.getById(user_id);
 		WeightDB wdb=new WeightDB();
-		//u.setId(user_id);
 		ArrayList<Double> gets=wdb.getAverages();
+
+		if(gets.isEmpty()){
+			JOptionPane.showMessageDialog(null, "No weight data found. Please add your weight first.");
+			return;
+		}
 		System.out.println(gets.get(0));
-		
+
 		if(rdbtnNewRadioButton.
-		isSelected()==false && rdbtnModeratelyActive.isSelected()==false && 
+		isSelected()==false && rdbtnModeratelyActive.isSelected()==false &&
 		rdbtnActive.isSelected()==false ){
 			JOptionPane.showMessageDialog(null, "Please select your activity level");
 		}
 		else{
 		if(rdbtnNewRadioButton.isSelected()){
-		if(u.getGender().equals("male")){
+		if(u.getGender().equalsIgnoreCase("male")){
 			double nessCalI=5*gets.get(0);
 			//System.out.println(nessCalI);
 			String inactive=String.valueOf(nessCalI);
@@ -370,7 +373,7 @@ public class PeriodSelect {
 		}
 		}
 		else if(rdbtnModeratelyActive.isSelected()){
-			if(u.getGender().equals("male")){
+			if(u.getGender().equalsIgnoreCase("male")){
 				double nessCalM=6*gets.get(0);	
 				String Mactive=String.valueOf(nessCalM);
 				label.setText(Mactive);
@@ -382,7 +385,7 @@ public class PeriodSelect {
 			}
 		}
 		else if(rdbtnActive.isSelected()){
-			if(u.getGender().equals("male")){
+			if(u.getGender().equalsIgnoreCase("male")){
 				double nessCalA=7.5*gets.get(0);
 				String active=String.valueOf(nessCalA);
 				label.setText(active);

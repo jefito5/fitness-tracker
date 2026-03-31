@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 
@@ -33,7 +34,7 @@ public class MealIUD {
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
-	private JTextField textField_3;
+	private JComboBox<String> textField_3;
 	private JPasswordField passwordField;
 	private int ids;
 	private String names;
@@ -181,11 +182,10 @@ public class MealIUD {
 	
 		
 		
-		textField_3 = new JTextField();
-		textField_3.setColumns(10);
+		textField_3 = new JComboBox<>(new String[]{"male", "female"});
 		textField_3.setBounds(110, 138, 131, 20);
 		frame.getContentPane().add(textField_3);
-		textField_3.setText(genders);
+		textField_3.setSelectedItem(genders);
 		
 		
 		JLabel lblName = new JLabel("Name:");
@@ -229,10 +229,9 @@ public class MealIUD {
 			int asd=Integer.parseInt(textField.getText());
 			new trackProgress(asd);
 			System.out.println(textField.getText());
-			frame.setVisible(false);
-			
+
 		}
-		
+
 	}
 	class UpdateProfileListener implements ActionListener{
 
@@ -242,7 +241,7 @@ public class MealIUD {
 			int text_3=Integer.parseInt(textField.getText());
 			User u=udb.getById(text_3); 
 			u.setName(textField_1.getText());
-			u.setGender(textField_3.getText());
+			u.setGender((String) textField_3.getSelectedItem());
 			int text_2=Integer.parseInt(textField_2.getText());
 			u.setAge(text_2);
 			u.setPassword(passwordField.getText());

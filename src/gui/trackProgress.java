@@ -94,42 +94,41 @@ public class trackProgress {
 		lblTrackYourDaily.setBounds(130, 11, 392, 47);
 		trackFrame.getContentPane().add(lblTrackYourDaily);
 		
-		// ── TODO: not yet implemented ──
-		// JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
-		// lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
-		// lblNewLabel.setBounds(30, 125, 177, 32);
-		// trackFrame.getContentPane().add(lblNewLabel);
-		// 
-		// JLabel lblMorning = new JLabel("Morning:");
-		// lblMorning.setFont(new Font("Verdana", Font.PLAIN, 16));
-		// lblMorning.setBounds(40, 156, 81, 23);
-		// trackFrame.getContentPane().add(lblMorning);
-		// 
-		// txtmorningW = new JTextField();
-		// txtmorningW.setBounds(110, 159, 122, 23);
-		// trackFrame.getContentPane().add(txtmorningW);
-		// txtmorningW.setColumns(10);
-		// 
-		// JLabel lblEvening = new JLabel("Evening:");
-		// lblEvening.setFont(new Font("Verdana", Font.PLAIN, 16));
-		// lblEvening.setBounds(40, 190, 81, 23);
-		// trackFrame.getContentPane().add(lblEvening);
-		// 
-		// txtEveningW = new JTextField();
-		// txtEveningW.setColumns(10);
-		// txtEveningW.setBounds(110, 190, 122, 23);
-		// trackFrame.getContentPane().add(txtEveningW);
-		// 
-		// JButton btnAdd = new JButton("ADD");
-		// btnAdd.setBounds(234, 159, 65, 23);
-		// trackFrame.getContentPane().add(btnAdd);
-		// btnAdd.addActionListener(new InsertWeightListener());
-		// 
-		// JButton btnEvening = new JButton("ADD");
-		// btnEvening.setBounds(234, 190, 65, 23);
-		// trackFrame.getContentPane().add(btnEvening);
-		// 
-		// btnEvening.addActionListener(new UpdateWeightListener());
+		JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
+		lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
+		lblNewLabel.setBounds(30, 125, 177, 32);
+		trackFrame.getContentPane().add(lblNewLabel);
+
+		JLabel lblMorning = new JLabel("Morning:");
+		lblMorning.setFont(new Font("Verdana", Font.PLAIN, 16));
+		lblMorning.setBounds(40, 156, 81, 23);
+		trackFrame.getContentPane().add(lblMorning);
+
+		txtmorningW = new JTextField();
+		txtmorningW.setBounds(110, 159, 122, 23);
+		trackFrame.getContentPane().add(txtmorningW);
+		txtmorningW.setColumns(10);
+
+		JLabel lblEvening = new JLabel("Evening:");
+		lblEvening.setFont(new Font("Verdana", Font.PLAIN, 16));
+		lblEvening.setBounds(40, 190, 81, 23);
+		trackFrame.getContentPane().add(lblEvening);
+
+		txtEveningW = new JTextField();
+		txtEveningW.setColumns(10);
+		txtEveningW.setBounds(110, 190, 122, 23);
+		trackFrame.getContentPane().add(txtEveningW);
+
+		JButton btnAdd = new JButton("ADD");
+		btnAdd.setBounds(234, 159, 65, 23);
+		trackFrame.getContentPane().add(btnAdd);
+		btnAdd.addActionListener(new InsertWeightListener());
+
+		JButton btnEvening = new JButton("ADD");
+		btnEvening.setBounds(234, 190, 65, 23);
+		trackFrame.getContentPane().add(btnEvening);
+
+		btnEvening.addActionListener(new UpdateWeightListener());
 		
 		// ── TODO: not yet implemented ──
 		// JLabel lblYourWaist = new JLabel("Your Waist(in centimeters):");

@@ -6,6 +6,7 @@ import javax.swing.JTextField;
 import impl.UserDB;
 import models.User;
 
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JButton;
@@ -17,7 +18,7 @@ public class Iud {
 
 	private JFrame frame;
 	private JTextField textField;
-	private JTextField textField_1;
+	private JComboBox<String> textField_1;
 	private JTextField textField_2;
 	private JTextField textField_4;
 	private JPasswordField passwordField;
@@ -43,8 +44,7 @@ public class Iud {
 		lblName.setBounds(318, 46, 50, 14);
 		frame.getContentPane().add(lblName);
 		
-		textField_1 = new JTextField();
-		textField_1.setColumns(10);
+		textField_1 = new JComboBox<>(new String[]{"male", "female"});
 		textField_1.setBounds(400, 74, 130, 20);
 		frame.getContentPane().add(textField_1);
 		
@@ -149,7 +149,7 @@ public class Iud {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try{
-			if(textField.getText().isEmpty() || textField_1.getText().isEmpty() || 
+			if(textField.getText().isEmpty() ||
 			   textField_2.getText().isEmpty() || passwordField.getText().isEmpty()){
 				JOptionPane.showMessageDialog(null, "The fields can not be empty!!");
 			}
@@ -158,7 +158,7 @@ public class Iud {
 			u.setName(textField.getText());
 			int text_2=Integer.parseInt(textField_2.getText());
 			u.setAge(text_2);
-			u.setGender(textField_1.getText());
+			u.setGender((String) textField_1.getSelectedItem());
 			u.setPassword(passwordField.getText());
 			UserDB udb=new UserDB();
             udb.insert(u);
@@ -167,7 +167,7 @@ public class Iud {
 			JOptionPane.showMessageDialog(null, "User Registered!");
 				
 				textField.setText("");
-				textField_1.setText("");
+				textField_1.setSelectedIndex(0);
 				textField_2.setText("");
 				passwordField.setText("");
 			/*}
