@@ -1,5 +1,5 @@
 package gui;
-import gui.TrendLine;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -364,8 +364,12 @@ public class PeriodSelect {
 		WeightDB wdb=new WeightDB();
 		//u.setId(user_id);
 		ArrayList<Double> gets=wdb.getAverages();
-		System.out.println(gets.get(0));
-		
+
+		if (gets == null || gets.isEmpty()) {
+			label.setText("No weight data for today");
+			return;
+		}
+
 		if(rdbtnNewRadioButton.
 		isSelected()==false && rdbtnModeratelyActive.isSelected()==false && 
 		rdbtnActive.isSelected()==false ){
