@@ -88,6 +88,18 @@ public class MealIUD {
 		panel.add(btnNewButton);
 		btnNewButton.addActionListener(new OpenLogListener());
 		
+		// --- NAUJAS MYGTUKAS ANALIZEI IR DIAGRAMAI ---
+        JButton btnAnalyse = new JButton("ANALYSE PROGRESS");
+        btnAnalyse.setBounds(322, 175, 293, 30); // Dedamas po "Track Your Daily Progress" rėmeliu
+        frame.getContentPane().add(btnAnalyse);
+        
+        btnAnalyse.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // TIESIOGIAI iškviečiame TrendLine (Diagramos) langą!
+                new PeriodSelect(ids); 
+            }
+        });
+        // ----------------------------------------------
 		
 		JLabel lblDoneSomethingNew = new JLabel("Have Something New?");
 		lblDoneSomethingNew.setFont(new Font("Tahoma", Font.PLAIN, 20));

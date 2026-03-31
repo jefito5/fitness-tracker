@@ -153,18 +153,41 @@ public class WeightDB implements IweightDB{
 		return start;
 	}
 	
+	// PRIDĖTA: Naujas metodas diagramoms su DIAGNOSTIKA
+    public ArrayList<Weight> getWeightsByDateRange(int userId, String startDate, String endDate) {
+        ArrayList<Weight> weightsInRange = new ArrayList<>();
+        String sql = "SELECT * FROM weights WHERE UserId = ? AND Date >= ? AND Date <= ? ORDER BY Date ASC";
+        
+        try {
+            System.out.println("DIAGNOSTIKA: Ieškome svorių. UserID=" + userId + ", Nuo=" + startDate + ", Iki=" + endDate);
+            
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, startDate);
+            pstmt.setString(3, endDate);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            while(rs.next()){
+                Weight w = new Weight();
+                w.setWeightId(rs.getInt("id"));
+                w.setWeightM(rs.getDouble("WeightM"));
+                w.setWeightE(rs.getDouble("WeightE"));
+                w.setUserId(rs.getInt("UserId"));
+                w.setDate(java.sql.Date.valueOf(rs.getString("Date"))); 
+                w.setAverage(rs.getDouble("average"));
+                weightsInRange.add(w);
+                
+                System.out.println("DIAGNOSTIKA: Rastas svoris " + w.getAverage() + " kg, data: " + rs.getString("Date"));
+            }
+            
+            System.out.println("DIAGNOSTIKA: Iš viso rasta įrašų šiame periode: " + weightsInRange.size());
+            
+        } catch(Exception e) { // Gaudo absoliučiai visas klaidas!
+            System.out.println("DIAGNOSTIKA: Įvyko klaida traukiant duomenis:");
+            e.printStackTrace();
+        }
+        return weightsInRange;
+    }
 	
-
-
-
-
-	
-
-
-
-
-	
-	
-	
-		
 }
