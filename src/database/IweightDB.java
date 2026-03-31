@@ -13,5 +13,7 @@ public interface IweightDB {
 	ArrayList<Double> getAverages();
 	ArrayList<Double> getList();
 	ArrayList<Double> getStartEnd();
+
+	ArrayList<Double> getStartEndForUser(int userId);
 		
 }
