@@ -1,5 +1,5 @@
 package gui;
-
+import gui.TrendLine;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -288,52 +288,68 @@ public class PeriodSelect {
 			public void actionPerformed(ActionEvent e) {
 				calorieInformations();
 				activityLevelSelection();
-				try{
-				String aa=comboBox.getSelectedItem().toString();
-				String bb=comboBox_1.getSelectedItem().toString();
-				String cc=comboBox_2.getSelectedItem().toString();
-				String dd=comboBox_3.getSelectedItem().toString();
-				String ee=comboBox_4.getSelectedItem().toString();
-				String ff=comboBox_5.getSelectedItem().toString();
-				//System.out.println(aa+"-"+bb+"-"+cc);
-				Weight wt=new Weight();
-				wt.setPeriod1(aa+"-"+bb+"-"+cc);
-				wt.setPeriod2(dd+"-"+ee+"-"+ff);
-				int uID=Integer.parseInt(txtUserid.getText());
-				wt.setUserId(uID);
-				WeightDB wdb=new WeightDB();
-				wdb.getWeight(wt);
-				
-				
-				//this is getting weight for period
-				ArrayList<Double> averages=wdb.getWeight(wt);
-				System.out.println(averages);
-				double first=averages.get(0);
-				int lastSize=averages.size()-1;
-				
-				double last=averages.get(lastSize);
-				double weight_loss=first-last;
-				//System.out.println("Your weight loss for period is:"+weight_loss+"Kg");
-				String wt_loss=String.valueOf(weight_loss);
-				lblNewLabel.setText(wt_loss);
-				
-				//this calculates weight loss/gain from beginning to end
-				ArrayList<Double> start=wdb.getStartEnd();
-				System.out.println(start);
-				double first_weight=start.get(0);
-				int last_wt_size=start.size()-1;
-				double end_weight=start.get(last_wt_size);
-				double weight_LG=first_weight-end_weight;
-				//System.out.println("your total change in weight from beginning is:"+weight_LG);
-				String weight_SE = String.valueOf(weight_LG);
-				label_1.setText(weight_SE);
-				
-				frame.setSize(499, 580);
-				
-				
-				}		
-				catch(Exception ee){
-					JOptionPane.showMessageDialog(null, "It seems you have not selected valid period");
+				try {
+					int fromYear  = (int) comboBox.getSelectedItem();
+					int fromMonth = (int) comboBox_1.getSelectedItem();
+					int fromDay   = (int) comboBox_2.getSelectedItem();
+					int toYear    = (int) comboBox_3.getSelectedItem();
+					int toMonth   = (int) comboBox_4.getSelectedItem();
+					int toDay     = (int) comboBox_5.getSelectedItem();
+
+					// Build zero-padded ISO dates so SQLite date comparison works correctly
+					String fromDate = String.format("%04d-%02d-%02d", fromYear, fromMonth, fromDay);
+					String toDate   = String.format("%04d-%02d-%02d", toYear,   toMonth,   toDay);
+
+					// Validate: FROM must not be after TO
+					if (fromDate.compareTo(toDate) > 0) {
+						JOptionPane.showMessageDialog(null,
+							"Invalid date range: FROM date must be before or equal to TO date.",
+							"Invalid Range", JOptionPane.WARNING_MESSAGE);
+						return;
+					}
+
+					int uID = Integer.parseInt(txtUserid.getText());
+					Weight wt = new Weight();
+					wt.setPeriod1(fromDate);
+					wt.setPeriod2(toDate);
+					wt.setUserId(uID);
+
+					WeightDB wdb = new WeightDB();
+
+					// Weight change for the selected period
+					ArrayList<Double> averages = wdb.getWeight(wt);
+
+					if (averages == null || averages.isEmpty()) {
+						lblNewLabel.setText("No data in range");
+					} else {
+						// Filter out zero/unset averages
+						ArrayList<Double> valid = new ArrayList<>();
+						for (double v : averages) { if (v > 0) valid.add(v); }
+
+						if (valid.isEmpty()) {
+							lblNewLabel.setText("No valid data in range");
+						} else {
+							double periodChange = valid.get(0) - valid.get(valid.size() - 1);
+							lblNewLabel.setText(String.format("%.2f kg", periodChange));
+						}
+					}
+
+					// Total weight change from very first to most recent entry (scoped to this user)
+					ArrayList<Double> allEntries = wdb.getStartEndForUser(uID);
+
+					if (allEntries == null || allEntries.isEmpty()) {
+						label_1.setText("No data available");
+					} else {
+						double totalChange = allEntries.get(0) - allEntries.get(allEntries.size() - 1);
+						label_1.setText(String.format("%.2f kg", totalChange));
+					}
+
+					frame.setSize(499, 580);
+
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(null,
+						"Could not calculate weight change. Please ensure a valid date range is selected.",
+						"Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -431,4 +447,3 @@ public class PeriodSelect {
 		}
 	}
 	}
-

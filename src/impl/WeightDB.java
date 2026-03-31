@@ -153,6 +153,23 @@ public class WeightDB implements IweightDB{
 		return start;
 	}
 	
+	@Override
+	public ArrayList<Double> getStartEndForUser(int userId) {
+		ArrayList<Double> start = new ArrayList<>();
+		String sql = "SELECT average FROM weights WHERE UserId=? AND average > 0 ORDER BY Date ASC";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, userId);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				start.add(rs.getDouble("average"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return start;
+	}
+
 	// PRIDĖTA: Naujas metodas diagramoms su DIAGNOSTIKA
     public ArrayList<Weight> getWeightsByDateRange(int userId, String startDate, String endDate) {
         ArrayList<Weight> weightsInRange = new ArrayList<>();
