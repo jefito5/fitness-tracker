@@ -362,22 +362,21 @@ public class PeriodSelect {
 		int user_id=Integer.parseInt(txtUserid.getText());
 		User u=udb.getById(user_id);
 		WeightDB wdb=new WeightDB();
-		//u.setId(user_id);
 		ArrayList<Double> gets=wdb.getAverages();
 
 		if (gets == null || gets.isEmpty()) {
-			label.setText("No weight data for today");
+			label.setText("No weight data found");
 			return;
 		}
 
 		if(rdbtnNewRadioButton.
-		isSelected()==false && rdbtnModeratelyActive.isSelected()==false && 
+		isSelected()==false && rdbtnModeratelyActive.isSelected()==false &&
 		rdbtnActive.isSelected()==false ){
 			JOptionPane.showMessageDialog(null, "Please select your activity level");
 		}
 		else{
 		if(rdbtnNewRadioButton.isSelected()){
-		if(u.getGender().equals("male")){
+		if(u.getGender().equalsIgnoreCase("male")){
 			double nessCalI=5*gets.get(0);
 			//System.out.println(nessCalI);
 			String inactive=String.valueOf(nessCalI);
@@ -390,7 +389,7 @@ public class PeriodSelect {
 		}
 		}
 		else if(rdbtnModeratelyActive.isSelected()){
-			if(u.getGender().equals("male")){
+			if(u.getGender().equalsIgnoreCase("male")){
 				double nessCalM=6*gets.get(0);	
 				String Mactive=String.valueOf(nessCalM);
 				label.setText(Mactive);
@@ -402,7 +401,7 @@ public class PeriodSelect {
 			}
 		}
 		else if(rdbtnActive.isSelected()){
-			if(u.getGender().equals("male")){
+			if(u.getGender().equalsIgnoreCase("male")){
 				double nessCalA=7.5*gets.get(0);
 				String active=String.valueOf(nessCalA);
 				label.setText(active);
