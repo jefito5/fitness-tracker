@@ -259,22 +259,62 @@ public class MealIUD {
 		
 	}
 	
-	class InsertMealListener implements ActionListener{
+	class InsertMealListener implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			try{
-			if(txtmealname.getText().isEmpty() || txtcalorieG.getText().isEmpty()){
-				JOptionPane.showMessageDialog(null, "The fields cannot be empty!!");
-			}
-			else{
-			if (txtweight.getText().isEmpty()) {
-				JOptionPane.showMessageDialog(null, "Please enter weight in grams!");
+
+			// 2. UŽDUOTIS: Validacija - tuščių laukų tikrinimas
+			if (txtmealname.getText().isEmpty()) {
+				JOptionPane.showMessageDialog(null,
+					"Meal name cannot be empty!",
+					"Validation Error",
+					JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-			double grams = Double.parseDouble(txtweight.getText());
-			double kcalPer100g = Double.parseDouble(txtcalorieG.getText());
-			double totalKcal = kcalPer100g * grams / 100.0;
+
+			if (txtcalorieG.getText().isEmpty()) {
+				JOptionPane.showMessageDialog(null,
+					"Calories/100g field cannot be empty!",
+					"Validation Error",
+					JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			if (txtweight.getText().isEmpty()) {
+				JOptionPane.showMessageDialog(null,
+					"Weight field cannot be empty!",
+					"Validation Error",
+					JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			// 2. UŽDUOTIS: Validacija - ne skaičių tikrinimas
+			double grams;
+			double kcalPer100g;
+			double totalKcal;
+
+			try {
+				kcalPer100g = Double.parseDouble(txtcalorieG.getText());
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(null,
+					"Calories/100g must be a numeric value!\nExample: 52.5",
+					"Invalid Input",
+					JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			try {
+				grams = Double.parseDouble(txtweight.getText());
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(null,
+					"Weight must be a numeric value!\nExample: 150",
+					"Invalid Input",
+					JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			totalKcal = kcalPer100g * grams / 100.0;
 
 			// 1. Issaugoti i meals kataloga
 			Meal m = new Meal();
@@ -290,25 +330,19 @@ public class MealIUD {
 			dml.setTotalCalorieIntake(totalKcal);
 			new MealLogDB().insertDailyLog(dml);
 
+			// 3. UŽDUOTIS: Patvirtinimo dialogas po sėkmingo išsaugojimo
 			JOptionPane.showMessageDialog(null,
-				"Meal Added!\n" + txtmealname.getText() +
-				"\n" + grams + "g = " + String.format("%.1f", totalKcal) + " kcal");
+				"Meal saved successfully!\n\n" +
+				"Meal: " + txtmealname.getText() + "\n" +
+				"Amount: " + grams + "g\n" +
+				"Total calories: " + String.format("%.1f", totalKcal) + " kcal",
+				"Meal Added",
+				JOptionPane.INFORMATION_MESSAGE);
 
-				txtmealname.setText("");
-				txtcalorieG.setText("");
-				txtweight.setText("");
-			/*}
-			else{
-				JOptionPane.showMessageDialog(null, "Failed to Add Meal!!");
-			}*/
-			}
-			}
-			catch(NumberFormatException eee){
-				JOptionPane.showConfirmDialog
-				(null, "Please enter numeric value in calorie", "Naughty", JOptionPane.CANCEL_OPTION);
-			}
-			
+			txtmealname.setText("");
+			txtcalorieG.setText("");
+			txtweight.setText("");
 		}
-		}
+	}
 	
 }
