@@ -229,12 +229,25 @@ public class TrendLine {
                 rangeAxis.setUpperMargin(0.20); 
 
                 // --- 2. HORIZONTALI AŠIS (DATE) ---
-                DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
-                domainAxis.setDateFormatOverride(new SimpleDateFormat("yyyy-MM-dd"));
-                domainAxis.setTickUnit(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.DAY, 1));
-                domainAxis.setLowerMargin(0.1);
-                domainAxis.setUpperMargin(0.1);
-                domainAxis.setVerticalTickLabels(false);
+                org.jfree.chart.axis.DateAxis domainAxis = (org.jfree.chart.axis.DateAxis) plot.getDomainAxis();
+
+                // Sukuriame savo datų rodymo taisykles (neleidžiame skaidyti į valandas!)
+                org.jfree.chart.axis.TickUnits tickUnits = new org.jfree.chart.axis.TickUnits();
+                // Trumpam laikotarpiui: rodys kiekvieną dieną
+                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.DAY, 1, new java.text.SimpleDateFormat("yyyy-MM-dd")));
+                // Vidutiniam laikotarpiui: rodys kas savaitę (kas 7 dienas)
+                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.DAY, 7, new java.text.SimpleDateFormat("yyyy-MM-dd")));
+                // Ilgam laikotarpiui: rodys kas mėnesį
+                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.MONTH, 1, new java.text.SimpleDateFormat("yyyy-MM-dd")));
+
+                // Pritaikome šias taisykles ašiai
+                domainAxis.setStandardTickUnits(tickUnits);
+                domainAxis.setAutoTickUnitSelection(true); // Programa pati parinks tinkamiausią tarpą iš mūsų sąrašo
+
+                // Paraštės ir vertikalus tekstas
+                domainAxis.setLowerMargin(0.15);
+                domainAxis.setUpperMargin(0.15);
+                domainAxis.setVerticalTickLabels(true); // Datos bus vertikalios
 
                 // --- 3. RENDERER (LINIJOS IR REIKŠMĖS) ---
                 XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();

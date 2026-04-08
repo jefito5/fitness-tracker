@@ -4,6 +4,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 
@@ -22,6 +23,7 @@ import javax.swing.table.TableModel;
 
 import impl.ExerciseDB;
 import impl.ExerciseLogDB;
+import impl.FoodDB;
 import impl.MealDB;
 import impl.MealLogDB;
 import impl.UserDB;
@@ -40,6 +42,14 @@ import javax.swing.JScrollPane;
 import java.awt.Color;
 import java.time.LocalDate;
 import java.util.List;
+
+import javax.swing.JDialog;
+import java.awt.BorderLayout;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.TableRowSorter;
+import models.Food;
 
 
 public class trackProgress {
@@ -198,6 +208,20 @@ public class trackProgress {
 		lblAddYourExercise.setFont(new Font("Tahoma", Font.PLAIN, 17));
 		lblAddYourExercise.setBounds(380, 234, 233, 23);
 		trackFrame.getContentPane().add(lblAddYourExercise);
+
+		// Sukuriamas statuso užrašas (gali pasikoreguoti koordinates)
+		JLabel lblFoodStatus = new JLabel("Checking data...");
+		lblFoodStatus.setFont(new Font("Tahoma", Font.ITALIC, 11));
+		lblFoodStatus.setBounds(10, 630, 300, 20);
+		trackFrame.getContentPane().add(lblFoodStatus);
+
+		// Patikriname ir paleidžiame importą, jei DB tuščia
+		FoodDB fdb = new FoodDB();
+		if (fdb.isEmpty()) {
+			new services.FoodImporter(lblFoodStatus).execute();
+		} else {
+			lblFoodStatus.setText("Food database integrated.");
+		}
 		
 	JScrollPane exercise = new JScrollPane();
 		exercise.setBounds(380, 268, 308, 186);
@@ -235,10 +259,21 @@ public class trackProgress {
 		
 		
 		txtmealName = new JTextField();
-		txtmealName.setBounds(147, 465, 164, 23);
+		txtmealName.setBounds(147, 465, 120, 23);
 		trackFrame.getContentPane().add(txtmealName);
 		txtmealName.setColumns(10);
 		
+		JButton btnSearchDB = new JButton("Search DB");
+		btnSearchDB.setBounds(272, 465, 95, 23);
+		btnSearchDB.setFont(new Font("Tahoma", Font.PLAIN, 11));
+		trackFrame.getContentPane().add(btnSearchDB);
+
+		btnSearchDB.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				openFoodSearchDialog(); // Atidaro paieškos langą
+			}
+		});
+
 		txtmealcalorie = new JTextField();
 		txtmealcalorie.setColumns(10);
 		txtmealcalorie.setBounds(147, 499, 164, 23);
@@ -354,6 +389,78 @@ public class trackProgress {
 		
 		trackFrame.setVisible(true);
 	}
+
+
+	// --- NAUJAS METODAS PAIEŠKOS LANGUI ---
+    private void openFoodSearchDialog() {
+        JDialog searchDialog = new JDialog(trackFrame, "Search Food Database", true);
+        searchDialog.setSize(500, 400);
+        searchDialog.setLocationRelativeTo(trackFrame);
+        searchDialog.getContentPane().setLayout(new BorderLayout());
+
+        JPanel topPanel = new JPanel();
+        topPanel.add(new JLabel("Search: "));
+        JTextField searchField = new JTextField(20);
+        topPanel.add(searchField);
+        searchDialog.getContentPane().add(topPanel, BorderLayout.NORTH);
+
+        String[] cols = {"Name", "Calories", "Protein", "Carbs", "Fat"};
+        DefaultTableModel searchModel = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JTable searchTable = new JTable(searchModel);
+        searchDialog.getContentPane().add(new JScrollPane(searchTable), BorderLayout.CENTER);
+
+        // Užkrauname viską pržioje
+        FoodDB fdb = new FoodDB();
+        List<Food> allFoods = fdb.getAll();
+        for(Food f : allFoods) {
+            searchModel.addRow(new Object[]{f.getName(), f.getCalories(), f.getProtein(), f.getCarbs(), f.getFat()});
+        }
+
+        // Filtravimas rašant
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(searchModel);
+        searchTable.setRowSorter(sorter);
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = searchField.getText();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
+
+        JButton btnSelect = new JButton("Select");
+        btnSelect.addActionListener(e -> {
+            int row = searchTable.getSelectedRow();
+            if (row >= 0) {
+                // Konvertuojame index'ą, nes lentelė gali būti išrikiuota/išfiltruota
+                int modelRow = searchTable.convertRowIndexToModel(row);
+                String name = searchModel.getValueAt(modelRow, 0).toString();
+                String cal = searchModel.getValueAt(modelRow, 1).toString();
+                
+                txtmealName.setText(name);
+                txtmealcalorie.setText(cal);
+                searchDialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(searchDialog, "Please select a food item.");
+            }
+        });
+        
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.add(btnSelect);
+        searchDialog.getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+
+        searchDialog.setVisible(true);
+    }
+
+
 	   public void Show_Meals_In_JTable()
 	   {
 		   // Rodyti tik tos dienos maisto log'us — ta pati logika kaip pratimų
