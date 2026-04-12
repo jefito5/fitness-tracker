@@ -56,3 +56,11 @@ CREATE TABLE IF NOT EXISTS weights (
     Date TEXT,
     average REAL
 );
+CREATE TABLE IF NOT EXISTS foods (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    calories_per_100g REAL,
+    protein_per_100g REAL,
+    carbs_per_100g REAL,
+    fat_per_100g REAL
+);
