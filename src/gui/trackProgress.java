@@ -72,6 +72,16 @@ public class trackProgress {
 	private String currentViewDate;
 	private int get;
 
+	// Macro summary labels shown in the header area
+	private JLabel lblProteinVal;
+	private JLabel lblCarbsVal;
+	private JLabel lblFatVal;
+
+	// Tracks macros from the food-search dialog so InsertDailymealListener can save them
+	private double selectedProtein = 0;
+	private double selectedCarbs   = 0;
+	private double selectedFat     = 0;
+
 	public trackProgress(int gets) {
 		get=gets;
 		currentViewDate = String.valueOf(LocalDate.now());
@@ -79,6 +89,7 @@ public class trackProgress {
 		Show_Meals_In_JTable();
 		Show_Exercise_In_JTable();
 		Show_MealLog_In_JTable();
+		refreshMacroSummary();
 	}
 
 	private void initialize() {
@@ -103,6 +114,46 @@ public class trackProgress {
 		lblTrackYourDaily.setFont(new Font("Verdana", Font.BOLD, 22));
 		lblTrackYourDaily.setBounds(130, 11, 392, 47);
 		trackFrame.getContentPane().add(lblTrackYourDaily);
+
+		// ── MACRO SUMMARY PANEL (y=60–100) ───────────────────────────────────
+		JLabel lblMacroHeader = new JLabel("Today's Macros:");
+		lblMacroHeader.setFont(new Font("Verdana", Font.BOLD, 12));
+		lblMacroHeader.setBounds(30, 62, 130, 18);
+		trackFrame.getContentPane().add(lblMacroHeader);
+
+		JLabel lblProteinKey = new JLabel("Protein:");
+		lblProteinKey.setFont(new Font("Verdana", Font.PLAIN, 12));
+		lblProteinKey.setBounds(30, 82, 60, 18);
+		trackFrame.getContentPane().add(lblProteinKey);
+
+		lblProteinVal = new JLabel("0.0g");
+		lblProteinVal.setFont(new Font("Verdana", Font.BOLD, 12));
+		lblProteinVal.setForeground(new Color(0, 100, 0));
+		lblProteinVal.setBounds(90, 82, 80, 18);
+		trackFrame.getContentPane().add(lblProteinVal);
+
+		JLabel lblCarbsKey = new JLabel("Carbs:");
+		lblCarbsKey.setFont(new Font("Verdana", Font.PLAIN, 12));
+		lblCarbsKey.setBounds(185, 82, 55, 18);
+		trackFrame.getContentPane().add(lblCarbsKey);
+
+		lblCarbsVal = new JLabel("0.0g");
+		lblCarbsVal.setFont(new Font("Verdana", Font.BOLD, 12));
+		lblCarbsVal.setForeground(new Color(180, 100, 0));
+		lblCarbsVal.setBounds(242, 82, 80, 18);
+		trackFrame.getContentPane().add(lblCarbsVal);
+
+		JLabel lblFatKey = new JLabel("Fat:");
+		lblFatKey.setFont(new Font("Verdana", Font.PLAIN, 12));
+		lblFatKey.setBounds(340, 82, 35, 18);
+		trackFrame.getContentPane().add(lblFatKey);
+
+		lblFatVal = new JLabel("0.0g");
+		lblFatVal.setFont(new Font("Verdana", Font.BOLD, 12));
+		lblFatVal.setForeground(new Color(180, 0, 0));
+		lblFatVal.setBounds(378, 82, 80, 18);
+		trackFrame.getContentPane().add(lblFatVal);
+		// ─────────────────────────────────────────────────────────────────────
 		
 		JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
 		lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
@@ -372,6 +423,7 @@ public class trackProgress {
 					lblSelectedDate.setText("Viewing: " + currentViewDate);
 					Show_Exercise_In_JTable();
 					Show_MealLog_In_JTable();
+					refreshMacroSummary();
 				}
 			}
 		});
@@ -383,6 +435,7 @@ public class trackProgress {
 				refreshDateComboBox();
 				Show_Exercise_In_JTable();
 				Show_MealLog_In_JTable();
+				refreshMacroSummary();
 			}
 		});
 		// ─────────────────────────────────────────────────────────────────────
@@ -440,13 +493,19 @@ public class trackProgress {
         btnSelect.addActionListener(e -> {
             int row = searchTable.getSelectedRow();
             if (row >= 0) {
-                // Konvertuojame index'ą, nes lentelė gali būti išrikiuota/išfiltruota
+                // Convert index in case the table is sorted/filtered
                 int modelRow = searchTable.convertRowIndexToModel(row);
                 String name = searchModel.getValueAt(modelRow, 0).toString();
-                String cal = searchModel.getValueAt(modelRow, 1).toString();
-                
+                String cal  = searchModel.getValueAt(modelRow, 1).toString();
+
                 txtmealName.setText(name);
                 txtmealcalorie.setText(cal);
+
+                // Capture macros so InsertDailymealListener can persist them
+                try { selectedProtein = Double.parseDouble(searchModel.getValueAt(modelRow, 2).toString()); } catch (Exception ex) { selectedProtein = 0; }
+                try { selectedCarbs   = Double.parseDouble(searchModel.getValueAt(modelRow, 3).toString()); } catch (Exception ex) { selectedCarbs   = 0; }
+                try { selectedFat     = Double.parseDouble(searchModel.getValueAt(modelRow, 4).toString()); } catch (Exception ex) { selectedFat     = 0; }
+
                 searchDialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(searchDialog, "Please select a food item.");
@@ -543,6 +602,20 @@ public class trackProgress {
 		   DefaultTableModel model = (DefaultTableModel)table.getModel();
 		   model.setRowCount(0);
 		   Show_Meals_In_JTable();
+		   refreshMacroSummary();
+	   }
+
+	   /**
+	    * Queries the DB for today's macro totals and updates the three header labels.
+	    * Shows "0.0g" gracefully when no meals have been logged.
+	    */
+	   public void refreshMacroSummary() {
+		   if (lblProteinVal == null) return; // guard against early calls
+		   MealLogDB mdb = new MealLogDB();
+		   double[] macros = mdb.getMacroSummary(get, currentViewDate);
+		   lblProteinVal.setText(String.format("%.1fg", macros[0]));
+		   lblCarbsVal.setText(String.format("%.1fg",   macros[1]));
+		   lblFatVal.setText(String.format("%.1fg",     macros[2]));
 	   }
 
 	   private int selectedExerciseId = -1;
@@ -839,10 +912,13 @@ class InsertWeightListener implements ActionListener{
                                         double mealAmount=Double.parseDouble(txtintake.getText());
                                         double totalCalorie=(calorieIntake / 100.0) * mealAmount; 
                                         
-                                        // 1. Sukuriame naują maistą Meals lentelėje ir gauname jo ID
+                                        // 1. Save the meal (with macros) to the meals catalogue
                                         Meal m = new Meal();
                                         m.setMealName(txtmealName.getText());
                                         m.setCaloriesPerGram(calorieIntake);
+                                        m.setProteinPer100g(selectedProtein);
+                                        m.setCarbsPer100g(selectedCarbs);
+                                        m.setFatPer100g(selectedFat);
                                         MealDB mdb = new MealDB();
                                         int generatedMealId = mdb.insertMeal(m);
 
@@ -863,6 +939,10 @@ class InsertWeightListener implements ActionListener{
                                             txtmealcalorie.setText("");
                                             txtintake.setText("");
                                             txtmealName.setText("");
+                                            // Reset captured macros for next entry
+                                            selectedProtein = 0;
+                                            selectedCarbs   = 0;
+                                            selectedFat     = 0;
                                             Show_MealLog_In_JTable();
                                         }
                                         else{

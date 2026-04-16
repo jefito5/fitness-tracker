@@ -4,6 +4,7 @@ import impl.FoodDB;
 import models.Food;
 import javax.swing.*;
 import java.io.*;
+import java.net.URL;
 import java.util.List;
 
 public class FoodImporter extends SwingWorker<Void, String> {
@@ -13,6 +14,59 @@ public class FoodImporter extends SwingWorker<Void, String> {
     public FoodImporter(JLabel statusLabel) {
         this.statusLabel = statusLabel;
         this.foodDB = new FoodDB();
+    }
+
+    /**
+     * Checks whether a food with the given name already exists in foods_seed.csv
+     * (case-insensitive). If not found, appends a new line in the same
+     * name,calories,protein,carbs,fat format.
+     *
+     * @return true if the entry was appended, false if it already existed or the file was not found.
+     */
+    public static boolean appendIfNew(String name, double calories,
+                                      double protein, double carbs, double fat) {
+        URL url = FoodImporter.class.getResource("/foods_seed.csv");
+        if (url == null) {
+            System.err.println("FoodImporter.appendIfNew: foods_seed.csv not found on classpath");
+            return false;
+        }
+
+        File csvFile;
+        try {
+            csvFile = new File(url.toURI());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        // Check whether the name is already present (case-insensitive)
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 1 && parts[0].trim().equalsIgnoreCase(name.trim())) {
+                    
+                    return false; // Already exists – nothing to do
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        // Not found – append a new line
+        try (BufferedWriter bw = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(csvFile, true), "UTF-8"))) {
+            // Ensure we start on a new line
+            bw.newLine();
+            bw.write(String.format("%s,%.1f,%.1f,%.1f,%.1f",
+                    name.trim(), calories, protein, carbs, fat));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
     }
 
     @Override

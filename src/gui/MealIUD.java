@@ -4,10 +4,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.MatteBorder;
 
-//import gui.MealIUD.InsertMealListener.InsertExerciseListener;
 import impl.MealDB;
 import impl.MealLogDB;
 import models.DailyMealLog;
+import services.FoodImporter;
 import impl.UserDB;
 import models.Meal;
 import models.User;
@@ -31,6 +31,9 @@ public class MealIUD {
 	private JTextField txtmealname;
 	private JTextField txtcalorieG;
 	private JTextField txtweight;
+	private JTextField txtprotein;
+	private JTextField txtcarbs;
+	private JTextField txtfat;
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
@@ -56,7 +59,7 @@ public class MealIUD {
 	private void initialize() {
 		frame = new JFrame();
 		frame.setFont(new Font("Verdana", Font.PLAIN, 25));
-		frame.setBounds(100, 100, 700, 560);
+		frame.setBounds(100, 100, 700, 620);
 		frame.setLocation(400,100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -142,8 +145,38 @@ public class MealIUD {
 		txtweight.setBounds(140, 404, 156, 30);
 		frame.getContentPane().add(txtweight);
 
+		JLabel lblProtein = new JLabel("Protein (g/100g):");
+		lblProtein.setFont(new Font("Verdana", Font.PLAIN, 13));
+		lblProtein.setBounds(10, 440, 130, 23);
+		frame.getContentPane().add(lblProtein);
+
+		txtprotein = new JTextField();
+		txtprotein.setColumns(10);
+		txtprotein.setBounds(140, 438, 156, 25);
+		frame.getContentPane().add(txtprotein);
+
+		JLabel lblCarbs = new JLabel("Carbs (g/100g):");
+		lblCarbs.setFont(new Font("Verdana", Font.PLAIN, 13));
+		lblCarbs.setBounds(10, 468, 130, 23);
+		frame.getContentPane().add(lblCarbs);
+
+		txtcarbs = new JTextField();
+		txtcarbs.setColumns(10);
+		txtcarbs.setBounds(140, 466, 156, 25);
+		frame.getContentPane().add(txtcarbs);
+
+		JLabel lblFat = new JLabel("Fat (g/100g):");
+		lblFat.setFont(new Font("Verdana", Font.PLAIN, 13));
+		lblFat.setBounds(10, 496, 130, 23);
+		frame.getContentPane().add(lblFat);
+
+		txtfat = new JTextField();
+		txtfat.setColumns(10);
+		txtfat.setBounds(140, 494, 156, 25);
+		frame.getContentPane().add(txtfat);
+
 		JButton btnInsert = new JButton("INSERT MEAL");
-		btnInsert.setBounds(76, 470, 120, 23);
+		btnInsert.setBounds(76, 524, 120, 23);
 		frame.getContentPane().add(btnInsert);
 		btnInsert.addActionListener(new InsertMealListener());
 		
@@ -271,18 +304,34 @@ public class MealIUD {
 				JOptionPane.showMessageDialog(null, "Please enter weight in grams!");
 				return;
 			}
-			double grams = Double.parseDouble(txtweight.getText());
+			double grams       = Double.parseDouble(txtweight.getText());
 			double kcalPer100g = Double.parseDouble(txtcalorieG.getText());
-			double totalKcal = kcalPer100g * grams / 100.0;
+			double totalKcal   = kcalPer100g * grams / 100.0;
 
-			// 1. Issaugoti i meals kataloga
+			// Parse optional macro fields – default to 0 if left blank
+			double protein = txtprotein.getText().isEmpty() ? 0 : Double.parseDouble(txtprotein.getText());
+			double carbs   = txtcarbs.getText().isEmpty()   ? 0 : Double.parseDouble(txtcarbs.getText());
+			double fat     = txtfat.getText().isEmpty()     ? 0 : Double.parseDouble(txtfat.getText());
+
+			// 1. Save to meals catalogue
 			Meal m = new Meal();
 			m.setMealName(txtmealname.getText());
 			m.setCaloriesPerGram(kcalPer100g);
+			m.setProteinPer100g(protein);
+			m.setCarbsPer100g(carbs);
+			m.setFatPer100g(fat);
 			MealDB udb = new MealDB();
 			int mealId = udb.insertMeal(m);
 
-			// 2. Issaugoti i DailyMealLog
+			// Išsaugoti į foods DB ir foods_seed.csv, jei tokio pavadinimo dar nėra
+			impl.FoodDB fdb = new impl.FoodDB();
+			models.Food newFood = new models.Food(
+				txtmealname.getText(), kcalPer100g, protein, carbs, fat);
+			fdb.insertIfNew(newFood);
+			FoodImporter.appendIfNew(
+				txtmealname.getText(), kcalPer100g, protein, carbs, fat);
+
+			// 2. Save to DailyMealLog
 			DailyMealLog dml = new DailyMealLog();
 			dml.setMealId(mealId);
 			dml.setUserId(ids);
@@ -296,10 +345,9 @@ public class MealIUD {
 				txtmealname.setText("");
 				txtcalorieG.setText("");
 				txtweight.setText("");
-			/*}
-			else{
-				JOptionPane.showMessageDialog(null, "Failed to Add Meal!!");
-			}*/
+				txtprotein.setText("");
+				txtcarbs.setText("");
+				txtfat.setText("");
 			}
 			}
 			catch(NumberFormatException eee){

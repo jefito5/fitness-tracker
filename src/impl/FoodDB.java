@@ -83,4 +83,24 @@ public class FoodDB implements IfoodDB { // Pridėtas implements
         }
         return results;
     }
+
+    /**
+     * Patikrina ar maistas su tokiu pavadinimu jau yra DB (case-insensitive).
+     * Jei ne — įrašo. Grąžina true jei įrašyta, false jei jau egzistavo.
+     */
+    public boolean insertIfNew(Food food) {
+        String checkSql = "SELECT COUNT(*) FROM foods WHERE LOWER(name) = LOWER(?)";
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setString(1, food.getName().trim());
+            ResultSet rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                return false; // Jau egzistuoja
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        insert(food);
+        return true;
+    }
 }

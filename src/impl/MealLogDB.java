@@ -142,4 +142,38 @@ public class MealLogDB implements IdailylogDB{
 		return logs;
 	}
 
+	/**
+	 * Returns total macronutrients consumed for the given user on the given date.
+	 * Formula:  grams_consumed = totalCalorieIntake * 100 / CaloriePerGram
+	 *           macro_total    = grams_consumed * macro_per_100g / 100
+	 *                         = totalCalorieIntake * macro_per_100g / CaloriePerGram
+	 *
+	 * @return double[3]  { totalProtein, totalCarbs, totalFat }  – all in grams, never null.
+	 */
+	public double[] getMacroSummary(int userId, String date) {
+		double[] result = {0.0, 0.0, 0.0};
+		String sql =
+			"SELECT " +
+			"  SUM(d.totalCalorieIntake * COALESCE(m.protein_per_100g, 0) / NULLIF(m.CaloriePerGram, 0)) AS totalProtein, " +
+			"  SUM(d.totalCalorieIntake * COALESCE(m.carbs_per_100g,   0) / NULLIF(m.CaloriePerGram, 0)) AS totalCarbs,   " +
+			"  SUM(d.totalCalorieIntake * COALESCE(m.fat_per_100g,     0) / NULLIF(m.CaloriePerGram, 0)) AS totalFat      " +
+			"FROM DailyMealLog d " +
+			"JOIN meals m ON d.mealID = m.id " +
+			"WHERE d.Date = ? AND d.userId = ?";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, date);
+			pstmt.setInt(2, userId);
+			ResultSet rs = pstmt.executeQuery();
+			if (rs.next()) {
+				result[0] = rs.getDouble("totalProtein");
+				result[1] = rs.getDouble("totalCarbs");
+				result[2] = rs.getDouble("totalFat");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
 }
