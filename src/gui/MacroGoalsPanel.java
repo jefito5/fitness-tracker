@@ -2,12 +2,13 @@ package gui;
 
 import impl.MacroGoalDB;
 import impl.MealLogDB;
+import models.MacroGoal;
+
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import javax.swing.*;
-import models.MacroGoal;
 
 /**
  * FT-120: Nutrition Goals by Macronutrient Ratios
@@ -59,7 +60,7 @@ public class MacroGoalsPanel {
 
     private void initialize() {
         frame = new JFrame("Macro Ratio Goals");
-        frame.setBounds(100, 100, 720, 600);
+        frame.setBounds(100, 100, 950, 720);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.getContentPane().setLayout(null);
@@ -251,7 +252,7 @@ public class MacroGoalsPanel {
 
         // ── Ring panel ─────────────────────────────────────────────────────
         ringPanel = new RingPanel();
-        ringPanel.setBounds(20, 285, 670, 280);
+        ringPanel.setBounds(20, 285, 900, 400);
         frame.getContentPane().add(ringPanel);
 
         frame.setVisible(true);

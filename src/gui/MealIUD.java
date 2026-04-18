@@ -39,6 +39,7 @@ public class MealIUD {
 	private JTextField textField_2;
 	private JComboBox<String> textField_3;
 	private JPasswordField passwordField;
+	private JTextField txtHeight;
 	private int ids;
 	private String names;
 	private int ages;
@@ -250,7 +251,7 @@ public class MealIUD {
 		frame.getContentPane().add(lblPassword);
 		
 		JButton btnUpdate = new JButton("UPDATE");
-		btnUpdate.setBounds(72, 197, 89, 23);
+		btnUpdate.setBounds(72, 223, 89, 23);
 		frame.getContentPane().add(btnUpdate);
 		btnUpdate.addActionListener(new UpdateProfileListener());
 		
@@ -263,6 +264,17 @@ public class MealIUD {
 		passwordField.setBounds(110, 169, 131, 20);
 		frame.getContentPane().add(passwordField);
 		passwordField.setText(passwords);
+		
+		JLabel lblHeight = new JLabel("Height (cm):");
+		lblHeight.setBounds(20, 197, 85, 14);
+		frame.getContentPane().add(lblHeight);
+		
+		txtHeight = new JTextField();
+		txtHeight.setBounds(110, 194, 131, 20);
+		frame.getContentPane().add(txtHeight);
+		UserDB udbH = new UserDB();
+		User uH = udbH.getById(ids);
+		if (uH != null && uH.getHeight() > 0) txtHeight.setText(String.valueOf((int)uH.getHeight()));
 		
 		frame.setVisible(true);
 	}
@@ -290,6 +302,7 @@ public class MealIUD {
 			int text_2=Integer.parseInt(textField_2.getText());
 			u.setAge(text_2);
 			u.setPassword(passwordField.getText());
+			try { if (!txtHeight.getText().trim().isEmpty()) u.setHeight(Double.parseDouble(txtHeight.getText().trim())); } catch (NumberFormatException ignored) {}
 			udb.update(u);
 			/*int rowUpdate=udb.update(u);
 			if(rowUpdate>0){
