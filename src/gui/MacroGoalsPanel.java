@@ -2,13 +2,12 @@ package gui;
 
 import impl.MacroGoalDB;
 import impl.MealLogDB;
-import models.MacroGoal;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import javax.swing.*;
+import models.MacroGoal;
 
 /**
  * FT-120: Nutrition Goals by Macronutrient Ratios
@@ -89,6 +88,7 @@ public class MacroGoalsPanel {
                 dailyCalorieGoal = Double.parseDouble(txtCalGoal.getText().trim());
                 MacroGoalDB db = new MacroGoalDB();
                 db.saveCalorieGoal(userId, dailyCalorieGoal);
+                lblCalGoal.setText("Goal: " + (int) dailyCalorieGoal + " kcal");
                 refreshRings();
                 JOptionPane.showMessageDialog(frame, "Calorie goal saved!");
             } catch (NumberFormatException ex) {

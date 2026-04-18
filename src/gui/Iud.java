@@ -61,7 +61,7 @@ public class Iud {
 		frame.getContentPane().add(lblAge);
 		
 		JButton btnInsert = new JButton("Register");
-		btnInsert.setBounds(403, 176, 89, 23);
+		btnInsert.setBounds(403, 190, 89, 23);
 		frame.getContentPane().add(btnInsert);
 		btnInsert.addActionListener(new InsertListener());
 		
@@ -110,7 +110,7 @@ public class Iud {
 		frame.getContentPane().add(lblPassword_1);
 		
 		JButton btnLogin = new JButton("Login");
-		btnLogin.setBounds(74, 104, 89, 23);
+		btnLogin.setBounds(115, 104, 89, 23);
 		frame.getContentPane().add(btnLogin);
 		btnLogin.addActionListener(new loginCheckListener());
 		

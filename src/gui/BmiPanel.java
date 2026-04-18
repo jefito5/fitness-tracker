@@ -52,10 +52,7 @@ public class BmiPanel {
         txtHeight.setBounds(165, 48, 80, 22);
         frame.getContentPane().add(txtHeight);
 
-        JButton btnSaveHeight = new JButton("Update");
-        btnSaveHeight.setBounds(255, 48, 90, 22);
-        frame.getContentPane().add(btnSaveHeight);
-        btnSaveHeight.addActionListener(e -> saveHeight());
+        
 
         // BMI card
         JPanel card = new JPanel();
