@@ -18,13 +18,18 @@ public class UserDB implements IuserDB{
 	
 	@Override
 	public int insert(User u){
-		String sql= "insert into users(name,gender,age,password) values(?,?,?,?)";
+		// Add height column if it doesn't exist yet (safe migration)
+		try { conn.createStatement().execute("ALTER TABLE users ADD COLUMN height REAL DEFAULT 0"); }
+		catch(java.sql.SQLException ignored) {}
+
+		String sql= "insert into users(name,gender,age,password,height) values(?,?,?,?,?)";
 		try{
 			PreparedStatement pstmt =conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			pstmt.setString(1, u.getName());
 			pstmt.setString(2, u.getGender());
 			pstmt.setInt(3, u.getAge());
 			pstmt.setString(4, u.getPassword());
+			pstmt.setDouble(5, u.getHeight());
 			
 			if(pstmt.executeUpdate() > 0){
 				ResultSet rs=pstmt.getGeneratedKeys();
@@ -40,14 +45,15 @@ public class UserDB implements IuserDB{
 	}
 	@Override
 	public int update(User u) {
-		String sql="update users set name=?,gender=?,age=?,password=? where id=?";
+		String sql="update users set name=?,gender=?,age=?,password=?,height=? where id=?";
 		try{
 			PreparedStatement pstmt = conn.prepareStatement(sql);
-			pstmt.setInt(5, u.getId());
+			pstmt.setInt(6, u.getId());
 			pstmt.setString(1, u.getName());
 			pstmt.setString(2, u.getGender());
 			pstmt.setInt(3, u.getAge());
 			pstmt.setString(4, u.getPassword());
+			pstmt.setDouble(5, u.getHeight());
 			
 			return pstmt.executeUpdate();
 			
@@ -73,7 +79,7 @@ public class UserDB implements IuserDB{
 				u.setName(rs.getString("name"));
 				u.setGender(rs.getString("gender"));
 				u.setAge(rs.getInt("age"));
-				
+				try { u.setHeight(rs.getDouble("height")); } catch(Exception ignored) {}
 			}
 			
 		}
@@ -120,7 +126,8 @@ public class UserDB implements IuserDB{
 				u.setName(rs.getString("name"));
 				u.setGender(rs.getString("gender"));
 				u.setAge(rs.getInt("age"));
-				u.setPassword(rs.getString("password"));	
+				u.setPassword(rs.getString("password"));
+				try { u.setHeight(rs.getDouble("height")); } catch(Exception ignored) {}
 			}	
 		}
 		catch(SQLException e){

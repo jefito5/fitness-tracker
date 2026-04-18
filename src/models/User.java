@@ -6,6 +6,7 @@ public class User {
 	private String gender;
 	private int age;
 	private String password;
+	private double height; // in centimeters
 	
 	public String getPassword() {
 		return password;
@@ -36,5 +37,12 @@ public class User {
 	}
 	public void setAge(int age) {
 		this.age = age;
-	}		
+	}
+
+	public double getHeight() {
+		return height;
+	}
+	public void setHeight(double height) {
+		this.height = height;
+	}
 }
