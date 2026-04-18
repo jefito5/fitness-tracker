@@ -103,6 +103,18 @@ public class MealIUD {
                 new PeriodSelect(ids); 
             }
         });
+
+        // FT-120: Macro Ratio Goals button
+        JButton btnMacroGoals = new JButton("MACRO GOALS");
+        btnMacroGoals.setBounds(322, 212, 140, 28);
+        frame.getContentPane().add(btnMacroGoals);
+        btnMacroGoals.addActionListener(e -> new MacroGoalsPanel(ids));
+
+        // FT-122: BMI button
+        JButton btnBmi = new JButton("BMI CHECK");
+        btnBmi.setBounds(472, 212, 140, 28);
+        frame.getContentPane().add(btnBmi);
+        btnBmi.addActionListener(e -> new BmiPanel(ids));
         // ----------------------------------------------
 		
 		JLabel lblDoneSomethingNew = new JLabel("Have Something New?");

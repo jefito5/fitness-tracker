@@ -1,19 +1,17 @@
 package gui;
 
-import javax.swing.JFrame;
-import javax.swing.JTextField;
-
 import impl.UserDB;
-import models.User;
-
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Font;
 import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import models.User;
 public class Iud {
 
 	private JFrame frame;
@@ -21,6 +19,7 @@ public class Iud {
 	private JComboBox<String> textField_1;
 	private JTextField textField_2;
 	private JTextField textField_4;
+	private JTextField textField_height; // NEW: height field
 	private JPasswordField passwordField;
 	private JPasswordField passwordField_1;
 
@@ -30,7 +29,7 @@ public class Iud {
 
 	private void initialize() {
 		frame = new JFrame("Registration panel");
-		frame.setBounds(100, 100, 585, 263);
+		frame.setBounds(100, 100, 585, 300);
 		frame.setLocation(430, 100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -88,6 +87,15 @@ public class Iud {
 		passwordField = new JPasswordField();
 		passwordField.setBounds(400, 136, 130, 20);
 		frame.getContentPane().add(passwordField);
+
+		JLabel lblHeight = new JLabel("Height (cm):");
+		lblHeight.setBounds(318, 163, 80, 14);
+		frame.getContentPane().add(lblHeight);
+
+		textField_height = new JTextField();
+		textField_height.setBounds(400, 160, 130, 20);
+		frame.getContentPane().add(textField_height);
+		textField_height.setColumns(10);
 		
 		passwordField_1 = new JPasswordField();
 		passwordField_1.setBounds(98, 77, 130, 20);
@@ -160,6 +168,10 @@ public class Iud {
 			u.setAge(text_2);
 			u.setGender((String) textField_1.getSelectedItem());
 			u.setPassword(passwordField.getText());
+			try {
+				String hStr = textField_height.getText().trim();
+				if (!hStr.isEmpty()) u.setHeight(Double.parseDouble(hStr));
+			} catch (NumberFormatException ignored) {}
 			UserDB udb=new UserDB();
             udb.insert(u);
 			//int rowUpdate= udb.insert(u);
@@ -170,6 +182,7 @@ public class Iud {
 				textField_1.setSelectedIndex(0);
 				textField_2.setText("");
 				passwordField.setText("");
+				textField_height.setText("");
 			/*}
 			else{
 				JOptionPane.showMessageDialog(null, "Failed to register User!!");
@@ -183,4 +196,4 @@ public class Iud {
 		}
 		}
 
-}
+}	
