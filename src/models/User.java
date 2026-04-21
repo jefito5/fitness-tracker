@@ -45,4 +45,9 @@ public class User {
 	public void setHeight(double height) {
 		this.height = height;
 	}
+
+	private int calorieGoal = 2000;
+
+	public int getCalorieGoal() { return calorieGoal; }
+	public void setCalorieGoal(int calorieGoal) { this.calorieGoal = calorieGoal; }
 }

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"X:/github/fitness-tracker/src\" -name \"*.java\")",
+      "Bash(\"X:/java/bin/javac.exe\" -cp \"X:/github/fitness-tracker/lib/sqlite-jdbc-3.51.2.0.jar\" -d \"X:/github/fitness-tracker/bin\" @/tmp/sources.txt)",
+      "Bash(X:/java/bin/javac.exe -cp 'X:/github/fitness-tracker/lib/sqlite-jdbc-3.51.2.0.jar;X:/github/fitness-tracker/lib/jfreechart-1.5.6.jar' -d X:/github/fitness-tracker/bin @/tmp/sources.txt)",
+      "Bash(\"X:/java/bin/java.exe\" -version)"
+    ]
+  }
+}

@@ -142,6 +142,18 @@ public class MealLogDB implements IdailylogDB{
 		return logs;
 	}
 
+	public double getTodayCalories(int userId) {
+		String sql = "SELECT SUM(totalCalorieIntake) FROM DailyMealLog WHERE userId=? AND Date=?";
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, userId);
+			pstmt.setString(2, String.valueOf(LocalDate.now()));
+			ResultSet rs = pstmt.executeQuery();
+			if (rs.next()) return rs.getDouble(1);
+		} catch (SQLException e) { e.printStackTrace(); }
+		return 0;
+	}
+
 	/**
 	 * Returns total macronutrients consumed for the given user on the given date.
 	 * Formula:  grams_consumed = totalCalorieIntake * 100 / CaloriePerGram
