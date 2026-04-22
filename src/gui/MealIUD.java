@@ -40,6 +40,7 @@ public class MealIUD {
 	private JComboBox<String> textField_3;
 	private JPasswordField passwordField;
 	private JTextField txtHeight;
+	private JTextField txtCalorieGoal;
 	private int ids;
 	private String names;
 	private int ages;
@@ -60,7 +61,7 @@ public class MealIUD {
 	private void initialize() {
 		frame = new JFrame();
 		frame.setFont(new Font("Verdana", Font.PLAIN, 25));
-		frame.setBounds(100, 100, 700, 620);
+		frame.setBounds(100, 100, 700, 645);
 		frame.setLocation(400,100);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -116,91 +117,97 @@ public class MealIUD {
         btnBmi.setBounds(472, 212, 140, 28);
         frame.getContentPane().add(btnBmi);
         btnBmi.addActionListener(e -> new BmiPanel(ids));
+
+        // FT: Calorie Deficit/Surplus Calculator
+        JButton btnCalorieCalc = new JButton("CALORIE CALC");
+        btnCalorieCalc.setBounds(322, 247, 293, 28);
+        frame.getContentPane().add(btnCalorieCalc);
+        btnCalorieCalc.addActionListener(e -> new CalorieCalcPanel(ids));
         // ----------------------------------------------
-		
+
 		JLabel lblDoneSomethingNew = new JLabel("Have Something New?");
 		lblDoneSomethingNew.setFont(new Font("Tahoma", Font.PLAIN, 20));
-		lblDoneSomethingNew.setBounds(10, 243, 211, 30);
+		lblDoneSomethingNew.setBounds(10, 268, 211, 30);
 		frame.getContentPane().add(lblDoneSomethingNew);
 		
 		JLabel lblAddMeals = new JLabel("ADD MEALS:");
 		lblAddMeals.setFont(new Font("Verdana", Font.PLAIN, 18));
-		lblAddMeals.setBounds(20, 284, 130, 30);
+		lblAddMeals.setBounds(20, 309, 130, 30);
 		frame.getContentPane().add(lblAddMeals);
 		
 		txtmealname = new JTextField();
-		txtmealname.setBounds(140, 325, 156, 30);
+		txtmealname.setBounds(140, 350, 156, 30);
 		frame.getContentPane().add(txtmealname);
 		txtmealname.setColumns(10);
 		
 		JLabel lblNewLabel_1 = new JLabel("Meal Name:");
 		lblNewLabel_1.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblNewLabel_1.setBounds(10, 332, 100, 23);
+		lblNewLabel_1.setBounds(10, 357, 100, 23);
 		frame.getContentPane().add(lblNewLabel_1);
 		
 		JLabel lblCaloriegram = new JLabel("Calories/100g:");
 		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblCaloriegram.setBounds(10, 373, 120, 23);
+		lblCaloriegram.setBounds(10, 398, 120, 23);
 		frame.getContentPane().add(lblCaloriegram);
 		
 		txtcalorieG = new JTextField();
 		txtcalorieG.setColumns(10);
-		txtcalorieG.setBounds(140, 366, 156, 30);
+		txtcalorieG.setBounds(140, 391, 156, 30);
 		frame.getContentPane().add(txtcalorieG);
 		
 		JLabel lblWeight = new JLabel("Weight (g):");
 		lblWeight.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblWeight.setBounds(10, 407, 120, 23);
+		lblWeight.setBounds(10, 432, 120, 23);
 		frame.getContentPane().add(lblWeight);
 
 		txtweight = new JTextField();
 		txtweight.setColumns(10);
-		txtweight.setBounds(140, 404, 156, 30);
+		txtweight.setBounds(140, 429, 156, 30);
 		frame.getContentPane().add(txtweight);
 
 		JLabel lblProtein = new JLabel("Protein (g/100g):");
 		lblProtein.setFont(new Font("Verdana", Font.PLAIN, 13));
-		lblProtein.setBounds(10, 440, 130, 23);
+		lblProtein.setBounds(10, 465, 130, 23);
 		frame.getContentPane().add(lblProtein);
 
 		txtprotein = new JTextField();
 		txtprotein.setColumns(10);
-		txtprotein.setBounds(140, 438, 156, 25);
+		txtprotein.setBounds(140, 463, 156, 25);
 		frame.getContentPane().add(txtprotein);
 
 		JLabel lblCarbs = new JLabel("Carbs (g/100g):");
 		lblCarbs.setFont(new Font("Verdana", Font.PLAIN, 13));
-		lblCarbs.setBounds(10, 468, 130, 23);
+		lblCarbs.setBounds(10, 493, 130, 23);
 		frame.getContentPane().add(lblCarbs);
 
 		txtcarbs = new JTextField();
 		txtcarbs.setColumns(10);
-		txtcarbs.setBounds(140, 466, 156, 25);
+		txtcarbs.setBounds(140, 491, 156, 25);
 		frame.getContentPane().add(txtcarbs);
 
 		JLabel lblFat = new JLabel("Fat (g/100g):");
 		lblFat.setFont(new Font("Verdana", Font.PLAIN, 13));
-		lblFat.setBounds(10, 496, 130, 23);
+		lblFat.setBounds(10, 521, 130, 23);
 		frame.getContentPane().add(lblFat);
 
 		txtfat = new JTextField();
 		txtfat.setColumns(10);
-		txtfat.setBounds(140, 494, 156, 25);
+		txtfat.setBounds(140, 519, 156, 25);
 		frame.getContentPane().add(txtfat);
 
 		JButton btnInsert = new JButton("INSERT MEAL");
-		btnInsert.setBounds(76, 524, 120, 23);
+		btnInsert.setBounds(76, 549, 120, 23);
 		frame.getContentPane().add(btnInsert);
 		btnInsert.addActionListener(new InsertMealListener());
 		
 		JLabel lblAddExercise = new JLabel("ADD EXERCISES:");
 		lblAddExercise.setFont(new Font("Verdana", Font.PLAIN, 18));
-		lblAddExercise.setBounds(322, 284, 176, 30);
+		lblAddExercise.setBounds(322, 309, 176, 30);
 		frame.getContentPane().add(lblAddExercise);
 
 		JButton btnBrowseExercises = new JButton("Browse Exercises");
 		btnBrowseExercises.setFont(new Font("Verdana", Font.PLAIN, 13));
-		btnBrowseExercises.setBounds(322, 325, 180, 30);
+		btnBrowseExercises.setBounds(322, 350, 180, 30);
 		btnBrowseExercises.addActionListener(e -> new ExerciseIUD(ids, 70.0));
 		frame.getContentPane().add(btnBrowseExercises);
 
@@ -251,7 +258,7 @@ public class MealIUD {
 		frame.getContentPane().add(lblPassword);
 		
 		JButton btnUpdate = new JButton("UPDATE");
-		btnUpdate.setBounds(72, 223, 89, 23);
+		btnUpdate.setBounds(72, 237, 89, 23);
 		frame.getContentPane().add(btnUpdate);
 		btnUpdate.addActionListener(new UpdateProfileListener());
 		
@@ -275,7 +282,16 @@ public class MealIUD {
 		UserDB udbH = new UserDB();
 		User uH = udbH.getById(ids);
 		if (uH != null && uH.getHeight() > 0) txtHeight.setText(String.valueOf((int)uH.getHeight()));
-		
+
+		JLabel lblCalorieGoal = new JLabel("Goal (kcal):");
+		lblCalorieGoal.setBounds(20, 215, 85, 14);
+		frame.getContentPane().add(lblCalorieGoal);
+
+		txtCalorieGoal = new JTextField();
+		txtCalorieGoal.setBounds(110, 212, 131, 20);
+		frame.getContentPane().add(txtCalorieGoal);
+		if (uH != null) txtCalorieGoal.setText(String.valueOf(uH.getCalorieGoal()));
+
 		frame.setVisible(true);
 	}
 	
@@ -303,6 +319,7 @@ public class MealIUD {
 			u.setAge(text_2);
 			u.setPassword(passwordField.getText());
 			try { if (!txtHeight.getText().trim().isEmpty()) u.setHeight(Double.parseDouble(txtHeight.getText().trim())); } catch (NumberFormatException ignored) {}
+			try { if (!txtCalorieGoal.getText().trim().isEmpty()) u.setCalorieGoal(Integer.parseInt(txtCalorieGoal.getText().trim())); } catch (NumberFormatException ignored) {}
 			udb.update(u);
 			/*int rowUpdate=udb.update(u);
 			if(rowUpdate>0){
