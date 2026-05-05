@@ -5,9 +5,14 @@ import java.awt.*;
 import javax.swing.*;
 import models.User;
 
-/**
- * FT-122: BMI Calculation & Body Metrics
- */
+import theme.UITheme;
+import components.SectionHeader;
+import components.StyledTextField;
+import components.CardPanel;
+import components.RoundedButton;
+import components.InfoLabel;
+
+
 public class BmiPanel {
 
     private JFrame frame;
@@ -18,7 +23,7 @@ public class BmiPanel {
     private JLabel lblWeightUsed;
     private JLabel lblHeightUsed;
     private JLabel lblPrevBmi;
-    private JTextField txtHeight;
+    private StyledTextField txtHeight;
 
     public BmiPanel(int userId) {
         this.userId = userId;
@@ -32,15 +37,16 @@ public class BmiPanel {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.getContentPane().setLayout(null);
+        
+        frame.getContentPane().setBackground(UITheme.BACKGROUND);
 
-        JLabel lblTitle = new JLabel("BMI & Body Metrics");
-        lblTitle.setFont(new Font("Verdana", Font.BOLD, 16));
+        SectionHeader lblTitle = new SectionHeader("BMI & Body Metrics");
         lblTitle.setBounds(20, 10, 300, 28);
         frame.getContentPane().add(lblTitle);
 
-        // Height input
         JLabel lblHLabel = new JLabel("Your Height (cm):");
-        lblHLabel.setFont(new Font("Verdana", Font.PLAIN, 12));
+        lblHLabel.setFont(UITheme.FONT_REGULAR);
+        lblHLabel.setForeground(UITheme.TEXT_MAIN);
         lblHLabel.setBounds(20, 50, 140, 20);
         frame.getContentPane().add(lblHLabel);
 
@@ -48,96 +54,67 @@ public class BmiPanel {
         User u = udb.getById(userId);
         double currentHeight = (u != null) ? u.getHeight() : 0;
 
-        txtHeight = new JTextField(currentHeight > 0 ? String.valueOf((int) currentHeight) : "");
-        txtHeight.setBounds(165, 48, 80, 22);
+        txtHeight = new StyledTextField(10);
+        txtHeight.setText(currentHeight > 0 ? String.valueOf((int) currentHeight) : "");
+        txtHeight.setBounds(150, 45, 70, 30);
         frame.getContentPane().add(txtHeight);
 
-        
-
-        // BMI card
-        JPanel card = new JPanel();
-        card.setLayout(null);
-        card.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
-        card.setBackground(new Color(245, 245, 245));
-        card.setBounds(20, 82, 410, 220);
+        CardPanel card = new CardPanel();
+        card.setBounds(20, 90, 410, 210);
         frame.getContentPane().add(card);
 
         JLabel lblBmiTitle = new JLabel("Your BMI");
-        lblBmiTitle.setFont(new Font("Verdana", Font.BOLD, 13));
-        lblBmiTitle.setBounds(10, 8, 200, 20);
+        lblBmiTitle.setFont(UITheme.FONT_SUBTITLE);
+        lblBmiTitle.setForeground(UITheme.TEXT_MAIN);
+        lblBmiTitle.setBounds(15, 10, 200, 20);
         card.add(lblBmiTitle);
 
         lblBmiValue = new JLabel("-");
-        lblBmiValue.setFont(new Font("Verdana", Font.BOLD, 46));
-        lblBmiValue.setForeground(new Color(52, 152, 219));
-        lblBmiValue.setBounds(10, 30, 200, 65);
+        lblBmiValue.setFont(new Font(UITheme.FONT_HEADER.getName(), Font.BOLD, 46));
+        lblBmiValue.setForeground(UITheme.PRIMARY);
+        lblBmiValue.setBounds(15, 35, 200, 65);
         card.add(lblBmiValue);
 
         lblBmiCategory = new JLabel("No data yet");
-        lblBmiCategory.setFont(new Font("Verdana", Font.BOLD, 15));
-        lblBmiCategory.setBounds(10, 100, 250, 22);
+        lblBmiCategory.setFont(UITheme.FONT_SUBTITLE);
+        lblBmiCategory.setBounds(15, 105, 250, 22);
         card.add(lblBmiCategory);
 
         lblWeightUsed = new JLabel("Weight: -");
-        lblWeightUsed.setFont(new Font("Verdana", Font.PLAIN, 11));
-        lblWeightUsed.setForeground(Color.DARK_GRAY);
-        lblWeightUsed.setBounds(10, 128, 200, 18);
+        lblWeightUsed.setFont(UITheme.FONT_SMALL);
+        lblWeightUsed.setForeground(UITheme.TEXT_MUTED);
+        lblWeightUsed.setBounds(15, 133, 200, 18);
         card.add(lblWeightUsed);
 
         lblHeightUsed = new JLabel("Height: -");
-        lblHeightUsed.setFont(new Font("Verdana", Font.PLAIN, 11));
-        lblHeightUsed.setForeground(Color.DARK_GRAY);
-        lblHeightUsed.setBounds(10, 148, 200, 18);
+        lblHeightUsed.setFont(UITheme.FONT_SMALL);
+        lblHeightUsed.setForeground(UITheme.TEXT_MUTED);
+        lblHeightUsed.setBounds(15, 153, 200, 18);
         card.add(lblHeightUsed);
 
         lblPrevBmi = new JLabel("Previous: -");
-        lblPrevBmi.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblPrevBmi.setForeground(Color.GRAY);
-        lblPrevBmi.setBounds(10, 168, 340, 18);
+        lblPrevBmi.setFont(new Font(UITheme.FONT_SMALL.getName(), Font.ITALIC, UITheme.FONT_SMALL.getSize()));
+        lblPrevBmi.setForeground(UITheme.TEXT_MUTED);
+        lblPrevBmi.setBounds(15, 173, 340, 18);
         card.add(lblPrevBmi);
 
-        // BMI scale on right side of card
         BmiScale scale = new BmiScale();
-        scale.setBounds(270, 10, 130, 200);
+        scale.setBounds(270, 10, 130, 190);
         card.add(scale);
 
-        // Info + Refresh
-        JLabel lblInfo = new JLabel("BMI = weight(kg) / height(m)^2");
-        lblInfo.setFont(new Font("Verdana", Font.ITALIC, 10));
-        lblInfo.setForeground(Color.GRAY);
+        InfoLabel lblInfo = new InfoLabel("BMI = weight(kg) / height(m)^2");
         lblInfo.setBounds(20, 312, 300, 16);
         frame.getContentPane().add(lblInfo);
 
-        JButton btnRefresh = new JButton("Refresh");
-        btnRefresh.setBounds(20, 335, 100, 28);
+        RoundedButton btnRefresh = new RoundedButton("Refresh");
+        btnRefresh.setBounds(20, 335, 100, 35);
         frame.getContentPane().add(btnRefresh);
         btnRefresh.addActionListener(e -> refreshBmi());
 
         frame.setVisible(true);
     }
 
-    private void saveHeight() {
-        try {
-            double h = Double.parseDouble(txtHeight.getText().trim());
-            if (h < 50 || h > 280) {
-                JOptionPane.showMessageDialog(frame, "Please enter a realistic height (50-280 cm).");
-                return;
-            }
-            UserDB udb = new UserDB();
-            User u = udb.getById(userId);
-            if (u != null) {
-                u.setHeight(h);
-                udb.update(u);
-                JOptionPane.showMessageDialog(frame, "Height updated!");
-                refreshBmi();
-            }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(frame, "Please enter a valid number.");
-        }
-    }
-
     private void refreshBmi() {
-        // Always re-read from DB to get latest saved height
         UserDB udb = new UserDB();
         User u = udb.getById(userId);
         if (u == null) return;
@@ -146,12 +123,11 @@ public class BmiPanel {
 
         if (heightCm <= 0) {
             lblBmiCategory.setText("Enter your height above");
-            lblBmiCategory.setForeground(Color.GRAY);
+            lblBmiCategory.setForeground(UITheme.TEXT_MUTED);
             lblBmiValue.setText("-");
             return;
         }
 
-        // Read latest 2 weight entries using WeightM (morning weight field)
         double latestWeight = 0;
         double prevWeight = 0;
         try {
@@ -168,7 +144,7 @@ public class BmiPanel {
 
         if (latestWeight <= 0) {
             lblBmiCategory.setText("Log your weight first");
-            lblBmiCategory.setForeground(Color.GRAY);
+            lblBmiCategory.setForeground(UITheme.TEXT_MUTED);
             lblBmiValue.setText("-");
             lblHeightUsed.setText("Height: " + (int) heightCm + " cm");
             return;
@@ -185,16 +161,16 @@ public class BmiPanel {
         Color catColor;
         if (bmi < 18.5) {
             category = "Underweight";
-            catColor = new Color(52, 152, 219);
+            catColor = UITheme.PRIMARY;
         } else if (bmi < 25.0) {
             category = "Normal weight";
-            catColor = new Color(39, 174, 96);
+            catColor = UITheme.SUCCESS;
         } else if (bmi < 30.0) {
             category = "Overweight";
             catColor = new Color(243, 156, 18);
         } else {
             category = "Obese";
-            catColor = new Color(231, 76, 60);
+            catColor = UITheme.ERROR;
         }
         lblBmiCategory.setText(category);
         lblBmiCategory.setForeground(catColor);
@@ -205,13 +181,18 @@ public class BmiPanel {
             double diff = bmi - prevBmi;
             String direction = diff > 0 ? "up" : (diff < 0 ? "down" : "same");
             lblPrevBmi.setText(String.format("Previous BMI: %.1f  (%s %.2f)", prevBmi, direction, Math.abs(diff)));
-            lblPrevBmi.setForeground(diff < 0 && bmi >= 18.5 ? new Color(39, 174, 96) : Color.GRAY);
+            lblPrevBmi.setForeground(diff < 0 && bmi >= 18.5 ? UITheme.SUCCESS : UITheme.TEXT_MUTED);
         } else {
             lblPrevBmi.setText("Previous: not enough data");
         }
     }
 
     static class BmiScale extends JPanel {
+        
+        public BmiScale() {
+            setOpaque(false);
+        }
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -220,21 +201,22 @@ public class BmiPanel {
 
             int w = 22, x = 10;
             int totalH = getHeight() - 20;
+            
             Color[] colors = {
-                new Color(231, 76, 60),
+                UITheme.ERROR,                  
                 new Color(243, 156, 18),
-                new Color(39, 174, 96),
-                new Color(52, 152, 219)
+                UITheme.SUCCESS,                
+                UITheme.PRIMARY                 
             };
             String[] labels = {"Obese >=30", "Over 25", "Normal 18.5", "Under"};
             int bandH = totalH / 4;
 
             for (int i = 0; i < 4; i++) {
                 g2.setColor(colors[i]);
-                g2.fillRect(x, i * bandH + 5, w, bandH - 2);
-                g2.setColor(Color.DARK_GRAY);
-                g2.setFont(new Font("Tahoma", Font.PLAIN, 9));
-                g2.drawString(labels[i], x + w + 4, i * bandH + 18);
+                g2.fillRoundRect(x, i * bandH + 5, w, bandH - 2, 6, 6);
+                g2.setColor(UITheme.TEXT_MAIN);
+                g2.setFont(UITheme.FONT_SMALL);
+                g2.drawString(labels[i], x + w + 8, i * bandH + 18 + (bandH/4));
             }
         }
     }
