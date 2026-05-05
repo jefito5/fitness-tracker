@@ -4,7 +4,12 @@
       "Bash(find \"X:/github/fitness-tracker/src\" -name \"*.java\")",
       "Bash(\"X:/java/bin/javac.exe\" -cp \"X:/github/fitness-tracker/lib/sqlite-jdbc-3.51.2.0.jar\" -d \"X:/github/fitness-tracker/bin\" @/tmp/sources.txt)",
       "Bash(X:/java/bin/javac.exe -cp 'X:/github/fitness-tracker/lib/sqlite-jdbc-3.51.2.0.jar;X:/github/fitness-tracker/lib/jfreechart-1.5.6.jar' -d X:/github/fitness-tracker/bin @/tmp/sources.txt)",
-      "Bash(\"X:/java/bin/java.exe\" -version)"
+      "Bash(\"X:/java/bin/java.exe\" -version)",
+      "Bash(git -C \"X:/github/fitness-tracker\" status)",
+      "Bash(git -C \"X:/github/fitness-tracker\" branch --show-current)",
+      "Bash(javac -d bin -cp \"lib/*\" src/gui/components/*.java src/gui/*.java)",
+      "Read(//tmp/**)",
+      "Bash(javac -d bin -cp \"lib/*\" @/tmp/sources.txt)"
     ]
   }
 }
