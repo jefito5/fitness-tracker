@@ -1,5 +1,10 @@
 package gui;
 
+import gui.components.CardPanel;
+import gui.components.RoundedButton;
+import gui.components.StyledTextField;
+import gui.components.TagChip;
+import gui.components.UITheme;
 import impl.ExerciseDB;
 import impl.ExerciseLogDB;
 import impl.PresetExerciseDB;
@@ -8,39 +13,93 @@ import models.Exercise;
 import models.PresetExercise;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * FT-85: Workout type selection screen (Cardio / Strength).
+ * UI-6: Redesigned Exercise Browser.
  *
- * Strength: pick exercise from preset list (grouped by muscle), enter reps + weight
- * Cardio:   pick exercise from preset list, enter duration → calories auto-calculated
- *           Formula: calories = MET * bodyWeightKg * (durationMin / 60)
+ * Two-pane layout — searchable / filterable exercise list on the left,
+ * detail &amp; quick-log panel on the right. Preset and custom exercises are
+ * shown together with a tag chip distinguishing them.
+ *
+ * FT-85: Workout type selection screen (Cardio / Strength).
+ *  - Cardio:   pick exercise, enter duration → calories auto-calculated
+ *              Formula: calories = MET * bodyWeightKg * (durationMin / 60)
+ *  - Strength: pick exercise (filterable by muscle), enter reps + weight
  */
 public class ExerciseIUD {
 
+    private static final String FILTER_ALL      = "All";
+    private static final String FILTER_CARDIO   = "Cardio";
+    private static final String FILTER_STRENGTH = "Strength";
+
+    /** Unified row model for the exercise list — wraps a preset OR a custom exercise. */
+    private static final class Entry {
+        final String name;
+        final String type;        // "Cardio" / "Strength"
+        final String muscleGroup;
+        final double met;
+        final boolean preset;
+        final PresetExercise presetRef; // null if custom
+
+        Entry(PresetExercise pe) {
+            this.name        = pe.getExerciseName();
+            this.type        = pe.getWorkoutType();
+            this.muscleGroup = pe.getMuscleGroup();
+            this.met         = pe.getMet();
+            this.preset      = true;
+            this.presetRef   = pe;
+        }
+
+        Entry(Exercise ex) {
+            this.name        = ex.getExerciseName();
+            this.type        = ex.getWorkoutType() == null ? "Cardio" : ex.getWorkoutType();
+            this.muscleGroup = ex.getMuscleGroup();
+            this.met         = 0;
+            this.preset      = false;
+            this.presetRef   = null;
+        }
+    }
+
+    // ── Inputs ──────────────────────────────────────────────────────────
+    private final int userId;
+    private final double userWeightKg;
+
+    // ── Top-level ───────────────────────────────────────────────────────
     private JFrame frame;
-    private int userId;
-    private double userWeightKg;
 
-    // ── Shared ───────────────────────────────────────────────────────────
-    private JRadioButton rdoCardio;
-    private JRadioButton rdoStrength;
+    // ── Left pane ───────────────────────────────────────────────────────
+    private StyledTextField searchField;
+    private RoundedButton chipAll, chipCardio, chipStrength;
+    private String activeFilter = FILTER_ALL;
+    private DefaultListModel<Entry> listModel;
+    private JList<Entry> exerciseList;
+    private List<Entry> allEntries = new ArrayList<>();
 
-    // ── Cardio ───────────────────────────────────────────────────────────
-    private JPanel cardioPanel;
-    private JComboBox<PresetExercise> cmbCardio;
-    private JTextField txtDuration;
+    // ── Right pane (detail / log) ───────────────────────────────────────
+    private CardPanel detailCard;
+    private JLabel selectedName;
+    private JPanel chipsRow;
+    private JLabel metaLabel;          // e.g. "MET 8.0  •  Body weight 70 kg"
+    private JPanel formContainer;      // CardLayout: cardio | strength | empty
+    private CardLayout formLayout;
+
+    // Cardio inputs
+    private StyledTextField txtDuration;
     private JLabel lblCalcResult;
 
-    // ── Strength ─────────────────────────────────────────────────────────
-    private JPanel strengthPanel;
-    private JComboBox<String> cmbMuscleGroup;
-    private JComboBox<PresetExercise> cmbStrength;
-    private JTextField txtReps;
-    private JTextField txtWeight;
+    // Strength inputs
+    private StyledTextField txtReps;
+    private StyledTextField txtWeight;
+
+    private RoundedButton btnInsert;
+    private JLabel statusLabel;        // inline feedback (replaces popups)
 
     public ExerciseIUD(int userId, double userWeightKg) {
         this.userId = userId;
@@ -51,268 +110,477 @@ public class ExerciseIUD {
     private void initialize() {
         new PresetExerciseDB().seedIfEmpty();
 
-        frame = new JFrame("Add Exercise");
-        frame.setBounds(100, 100, 500, 420);
-        frame.setLocation(420, 120);
+        frame = new JFrame("Exercises");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.getContentPane().setLayout(null);
+        frame.setMinimumSize(new Dimension(850, 560));
+        frame.setSize(960, 620);
+        frame.setLocationRelativeTo(null);
 
-        // ── Title ─────────────────────────────────────────────────────────
-        JLabel lblTitle = new JLabel("Add Exercise");
-        lblTitle.setFont(new Font("Verdana", Font.BOLD, 20));
-        lblTitle.setBounds(20, 15, 250, 30);
-        frame.getContentPane().add(lblTitle);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(UITheme.BACKGROUND);
+        root.setBorder(UITheme.padding(UITheme.SPACE_LG));
+        frame.setContentPane(root);
 
-        // ── Workout type radio buttons ────────────────────────────────────
-        JLabel lblType = new JLabel("Workout Type:");
-        lblType.setFont(new Font("Verdana", Font.PLAIN, 14));
-        lblType.setBounds(20, 60, 120, 25);
-        frame.getContentPane().add(lblType);
+        root.add(buildHeader(), BorderLayout.NORTH);
 
-        rdoCardio = new JRadioButton("Cardio");
-        rdoCardio.setFont(new Font("Verdana", Font.PLAIN, 14));
-        rdoCardio.setBounds(150, 59, 90, 25);
-        rdoCardio.setSelected(true);
-        frame.getContentPane().add(rdoCardio);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildLeftPane(), buildRightPane());
+        split.setDividerLocation(330);
+        split.setContinuousLayout(true);
+        split.setBorder(null);
+        split.setOpaque(false);
+        split.setBackground(UITheme.BACKGROUND);
+        root.add(split, BorderLayout.CENTER);
 
-        rdoStrength = new JRadioButton("Strength");
-        rdoStrength.setFont(new Font("Verdana", Font.PLAIN, 14));
-        rdoStrength.setBounds(245, 59, 100, 25);
-        frame.getContentPane().add(rdoStrength);
-
-        ButtonGroup grp = new ButtonGroup();
-        grp.add(rdoCardio);
-        grp.add(rdoStrength);
-
-        JSeparator sep = new JSeparator();
-        sep.setBounds(20, 92, 445, 2);
-        frame.getContentPane().add(sep);
-
-        // ══════════════════════════════════════════════════════════════════
-        // ── CARDIO PANEL ─────────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════
-        cardioPanel = new JPanel(null);
-        cardioPanel.setBounds(15, 100, 460, 220);
-        cardioPanel.setOpaque(false);
-        frame.getContentPane().add(cardioPanel);
-
-        JLabel lblExercise = new JLabel("Exercise:");
-        lblExercise.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblExercise.setBounds(5, 10, 80, 25);
-        cardioPanel.add(lblExercise);
-
-        ArrayList<PresetExercise> cardioList = new PresetExerciseDB().getByType("Cardio");
-        cmbCardio = new JComboBox<>(cardioList.toArray(new PresetExercise[0]));
-        cmbCardio.setFont(new Font("Verdana", Font.PLAIN, 13));
-        cmbCardio.setBounds(90, 8, 360, 28);
-        cardioPanel.add(cmbCardio);
-
-        JLabel lblDuration = new JLabel("Duration (min):");
-        lblDuration.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblDuration.setBounds(5, 52, 130, 25);
-        cardioPanel.add(lblDuration);
-
-        txtDuration = new JTextField();
-        txtDuration.setFont(new Font("Verdana", Font.PLAIN, 13));
-        txtDuration.setBounds(140, 50, 100, 28);
-        cardioPanel.add(txtDuration);
-
-        lblCalcResult = new JLabel("≈ — kcal");
-        lblCalcResult.setFont(new Font("Verdana", Font.BOLD, 14));
-        lblCalcResult.setForeground(new Color(0, 130, 0));
-        lblCalcResult.setBounds(255, 52, 200, 25);
-        cardioPanel.add(lblCalcResult);
-
-        JLabel lblFormula = new JLabel("Formula: MET × body weight × time");
-        lblFormula.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblFormula.setForeground(Color.GRAY);
-        lblFormula.setBounds(5, 88, 350, 18);
-        cardioPanel.add(lblFormula);
-
-        JLabel lblBodyW = new JLabel("Your weight: " + (int) userWeightKg + " kg  (update in profile)");
-        lblBodyW.setFont(new Font("Verdana", Font.PLAIN, 11));
-        lblBodyW.setForeground(Color.GRAY);
-        lblBodyW.setBounds(5, 106, 400, 18);
-        cardioPanel.add(lblBodyW);
-
-        // Live calorie update
-        txtDuration.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) { recalcCardio(); }
-        });
-        cmbCardio.addActionListener(e -> recalcCardio());
-
-        // ══════════════════════════════════════════════════════════════════
-        // ── STRENGTH PANEL ───────────────────────────────────────────────
-        // ══════════════════════════════════════════════════════════════════
-        strengthPanel = new JPanel(null);
-        strengthPanel.setBounds(15, 100, 460, 220);
-        strengthPanel.setOpaque(false);
-        strengthPanel.setVisible(false);
-        frame.getContentPane().add(strengthPanel);
-
-        JLabel lblMuscle = new JLabel("Muscle Group:");
-        lblMuscle.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblMuscle.setBounds(5, 10, 115, 25);
-        strengthPanel.add(lblMuscle);
-
-        String[] muscleGroups = {"All", "chest", "lats", "middle back", "lower back",
-                "shoulders", "traps", "biceps", "triceps",
-                "quadriceps", "hamstrings", "glutes", "calves", "abdominals"};
-        cmbMuscleGroup = new JComboBox<>(muscleGroups);
-        cmbMuscleGroup.setFont(new Font("Verdana", Font.PLAIN, 13));
-        cmbMuscleGroup.setBounds(125, 8, 180, 28);
-        strengthPanel.add(cmbMuscleGroup);
-
-        JLabel lblEx = new JLabel("Exercise:");
-        lblEx.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblEx.setBounds(5, 48, 80, 25);
-        strengthPanel.add(lblEx);
-
-        ArrayList<PresetExercise> strengthList = new PresetExerciseDB().getByType("Strength");
-        cmbStrength = new JComboBox<>(strengthList.toArray(new PresetExercise[0]));
-        cmbStrength.setFont(new Font("Verdana", Font.PLAIN, 13));
-        cmbStrength.setBounds(90, 46, 360, 28);
-        strengthPanel.add(cmbStrength);
-
-        JLabel lblReps = new JLabel("Reps:");
-        lblReps.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblReps.setBounds(5, 90, 60, 25);
-        strengthPanel.add(lblReps);
-
-        txtReps = new JTextField();
-        txtReps.setFont(new Font("Verdana", Font.PLAIN, 13));
-        txtReps.setBounds(68, 88, 80, 28);
-        strengthPanel.add(txtReps);
-
-        JLabel lblWeight = new JLabel("Weight (kg):");
-        lblWeight.setFont(new Font("Verdana", Font.PLAIN, 13));
-        lblWeight.setBounds(165, 90, 100, 25);
-        strengthPanel.add(lblWeight);
-
-        txtWeight = new JTextField();
-        txtWeight.setFont(new Font("Verdana", Font.PLAIN, 13));
-        txtWeight.setBounds(268, 88, 80, 28);
-        strengthPanel.add(txtWeight);
-
-        JLabel lblSetsHint = new JLabel("Tip: add one entry per set (e.g. 3 sets = 3 entries)");
-        lblSetsHint.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblSetsHint.setForeground(Color.GRAY);
-        lblSetsHint.setBounds(5, 126, 430, 18);
-        strengthPanel.add(lblSetsHint);
-
-        // Filter by muscle group
-        cmbMuscleGroup.addActionListener(e -> filterStrengthByMuscle());
-
-        // ── Radio toggle ─────────────────────────────────────────────────
-        rdoCardio.addActionListener(e -> {
-            cardioPanel.setVisible(true);
-            strengthPanel.setVisible(false);
-        });
-        rdoStrength.addActionListener(e -> {
-            cardioPanel.setVisible(false);
-            strengthPanel.setVisible(true);
-        });
-
-        // ── INSERT button ────────────────────────────────────────────────
-        JButton btnInsert = new JButton("INSERT EXERCISE");
-        btnInsert.setFont(new Font("Verdana", Font.BOLD, 14));
-        btnInsert.setBounds(130, 340, 220, 35);
-        btnInsert.addActionListener(new InsertListener());
-        frame.getContentPane().add(btnInsert);
+        loadEntries();
+        applyFilter();
 
         frame.setVisible(true);
     }
 
-    /** Filters strength combo box by selected muscle group */
-    private void filterStrengthByMuscle() {
-        String selected = (String) cmbMuscleGroup.getSelectedItem();
-        ArrayList<PresetExercise> all = new PresetExerciseDB().getByType("Strength");
-        cmbStrength.removeAllItems();
-        for (PresetExercise pe : all) {
-            if ("All".equals(selected) || pe.getMuscleGroup().equalsIgnoreCase(selected)) {
-                cmbStrength.addItem(pe);
-            }
+    // ════════════════════════════════════════════════════════════════════
+    //  HEADER
+    // ════════════════════════════════════════════════════════════════════
+    private JPanel buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setBorder(UITheme.padding(0, 0, UITheme.SPACE_LG, 0));
+
+        JPanel titleBlock = new JPanel();
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.setOpaque(false);
+
+        JLabel title = new JLabel("Exercises");
+        title.setFont(UITheme.FONT_TITLE);
+        title.setForeground(UITheme.TEXT_PRIMARY);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel subtitle = new JLabel("Browse, filter, and log your workouts");
+        subtitle.setFont(UITheme.FONT_CAPTION);
+        subtitle.setForeground(UITheme.TEXT_SECONDARY);
+        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        subtitle.setBorder(UITheme.padding(2, 0, 0, 0));
+
+        titleBlock.add(title);
+        titleBlock.add(subtitle);
+        header.add(titleBlock, BorderLayout.WEST);
+
+        JPanel chips = new JPanel(new FlowLayout(FlowLayout.RIGHT, UITheme.SPACE_SM, 0));
+        chips.setOpaque(false);
+        chipAll      = filterChip(FILTER_ALL);
+        chipCardio   = filterChip(FILTER_CARDIO);
+        chipStrength = filterChip(FILTER_STRENGTH);
+        chips.add(chipAll);
+        chips.add(chipCardio);
+        chips.add(chipStrength);
+        header.add(chips, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private RoundedButton filterChip(String label) {
+        RoundedButton b = new RoundedButton(label, RoundedButton.Variant.OUTLINE);
+        b.setBorder(UITheme.padding(6, 14));
+        if (label.equals(activeFilter)) b.setVariant(RoundedButton.Variant.PRIMARY);
+        b.addActionListener(e -> {
+            activeFilter = label;
+            chipAll.setVariant(label.equals(FILTER_ALL)         ? RoundedButton.Variant.PRIMARY : RoundedButton.Variant.OUTLINE);
+            chipCardio.setVariant(label.equals(FILTER_CARDIO)   ? RoundedButton.Variant.PRIMARY : RoundedButton.Variant.OUTLINE);
+            chipStrength.setVariant(label.equals(FILTER_STRENGTH)? RoundedButton.Variant.PRIMARY : RoundedButton.Variant.OUTLINE);
+            applyFilter();
+        });
+        return b;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  LEFT PANE — search + list
+    // ════════════════════════════════════════════════════════════════════
+    private JComponent buildLeftPane() {
+        CardPanel left = new CardPanel(true);
+        left.setLayout(new BorderLayout(0, UITheme.SPACE_MD));
+        left.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        searchField = new StyledTextField("Search exercises…");
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate (DocumentEvent e) { applyFilter(); }
+            public void removeUpdate (DocumentEvent e) { applyFilter(); }
+            public void changedUpdate(DocumentEvent e) { applyFilter(); }
+        });
+        left.add(searchField, BorderLayout.NORTH);
+
+        listModel = new DefaultListModel<>();
+        exerciseList = new JList<>(listModel);
+        exerciseList.setCellRenderer(new EntryRenderer());
+        exerciseList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        exerciseList.setBackground(UITheme.SURFACE);
+        exerciseList.setFixedCellHeight(58);
+        exerciseList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) updateDetailPane(exerciseList.getSelectedValue());
+        });
+
+        JScrollPane scroll = new JScrollPane(exerciseList);
+        scroll.setBorder(BorderFactory.createLineBorder(UITheme.BORDER));
+        scroll.getViewport().setBackground(UITheme.SURFACE);
+        left.add(scroll, BorderLayout.CENTER);
+
+        return left;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  RIGHT PANE — detail + quick-log form
+    // ════════════════════════════════════════════════════════════════════
+    private JComponent buildRightPane() {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setBorder(UITheme.padding(0, UITheme.SPACE_LG, 0, 0));
+
+        detailCard = new CardPanel(true);
+        detailCard.setLayout(new BoxLayout(detailCard, BoxLayout.Y_AXIS));
+        detailCard.setBorder(UITheme.padding(UITheme.SPACE_XL));
+
+        selectedName = new JLabel("Select an exercise");
+        selectedName.setFont(UITheme.FONT_DISPLAY);
+        selectedName.setForeground(UITheme.TEXT_PRIMARY);
+        selectedName.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        chipsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        chipsRow.setOpaque(false);
+        chipsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        chipsRow.setBorder(UITheme.padding(UITheme.SPACE_SM, 0, 0, 0));
+
+        metaLabel = new JLabel(" ");
+        metaLabel.setFont(UITheme.FONT_CAPTION);
+        metaLabel.setForeground(UITheme.TEXT_SECONDARY);
+        metaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        metaLabel.setBorder(UITheme.padding(UITheme.SPACE_MD, 0, 0, 0));
+
+        JLabel formHeading = new JLabel("Log this exercise");
+        formHeading.setFont(UITheme.FONT_HEADING);
+        formHeading.setForeground(UITheme.TEXT_PRIMARY);
+        formHeading.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formHeading.setBorder(UITheme.padding(UITheme.SPACE_XL, 0, UITheme.SPACE_MD, 0));
+
+        formLayout = new CardLayout();
+        formContainer = new JPanel(formLayout);
+        formContainer.setOpaque(false);
+        formContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formContainer.add(buildEmptyForm(),    "empty");
+        formContainer.add(buildCardioForm(),   "cardio");
+        formContainer.add(buildStrengthForm(), "strength");
+        formContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+
+        statusLabel = new JLabel(" ");
+        statusLabel.setFont(UITheme.FONT_CAPTION);
+        statusLabel.setForeground(UITheme.TEXT_MUTED);
+        statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        statusLabel.setBorder(UITheme.padding(UITheme.SPACE_MD, 0, UITheme.SPACE_SM, 0));
+
+        btnInsert = new RoundedButton("INSERT EXERCISE", RoundedButton.Variant.PRIMARY);
+        btnInsert.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnInsert.setEnabled(false);
+        btnInsert.addActionListener(e -> doInsert());
+
+        detailCard.add(selectedName);
+        detailCard.add(chipsRow);
+        detailCard.add(metaLabel);
+        detailCard.add(formHeading);
+        detailCard.add(formContainer);
+        detailCard.add(statusLabel);
+        detailCard.add(btnInsert);
+        detailCard.add(Box.createVerticalGlue());
+
+        wrapper.add(detailCard, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private JComponent buildEmptyForm() {
+        JLabel hint = new JLabel("← Pick an exercise from the list to log it.");
+        hint.setFont(UITheme.FONT_BODY);
+        hint.setForeground(UITheme.TEXT_MUTED);
+        JPanel p = new JPanel(new BorderLayout());
+        p.setOpaque(false);
+        p.add(hint, BorderLayout.NORTH);
+        return p;
+    }
+
+    private JComponent buildCardioForm() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(UITheme.SPACE_XS, 0, UITheme.SPACE_XS, UITheme.SPACE_MD);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0; c.gridy = 0; c.weightx = 0;
+        p.add(fieldLabel("Duration (min)"), c);
+
+        c.gridx = 1; c.weightx = 1;
+        txtDuration = new StyledTextField("e.g. 30");
+        txtDuration.addKeyListener(new KeyAdapter() {
+            @Override public void keyReleased(KeyEvent e) { recalcCardio(); }
+        });
+        p.add(txtDuration, c);
+
+        c.gridx = 0; c.gridy = 1; c.weightx = 0;
+        p.add(fieldLabel("Estimated burn"), c);
+
+        c.gridx = 1; c.weightx = 1;
+        lblCalcResult = new JLabel("≈ — kcal");
+        lblCalcResult.setFont(UITheme.FONT_BODY_BOLD);
+        lblCalcResult.setForeground(UITheme.SUCCESS);
+        p.add(lblCalcResult, c);
+
+        c.gridx = 0; c.gridy = 2; c.gridwidth = 2; c.weightx = 1;
+        JLabel formula = new JLabel("Formula: MET × body weight × time");
+        formula.setFont(UITheme.FONT_CAPTION);
+        formula.setForeground(UITheme.TEXT_MUTED);
+        p.add(formula, c);
+
+        return p;
+    }
+
+    private JComponent buildStrengthForm() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(UITheme.SPACE_XS, 0, UITheme.SPACE_XS, UITheme.SPACE_MD);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0; c.gridy = 0; c.weightx = 0;
+        p.add(fieldLabel("Reps"), c);
+        c.gridx = 1; c.weightx = 1;
+        txtReps = new StyledTextField("e.g. 10");
+        p.add(txtReps, c);
+
+        c.gridx = 0; c.gridy = 1; c.weightx = 0;
+        p.add(fieldLabel("Weight (kg)"), c);
+        c.gridx = 1; c.weightx = 1;
+        txtWeight = new StyledTextField("e.g. 60");
+        p.add(txtWeight, c);
+
+        c.gridx = 0; c.gridy = 2; c.gridwidth = 2; c.weightx = 1;
+        JLabel hint = new JLabel("Tip: add one entry per set (3 sets = 3 entries)");
+        hint.setFont(UITheme.FONT_CAPTION);
+        hint.setForeground(UITheme.TEXT_MUTED);
+        p.add(hint, c);
+
+        return p;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(UITheme.FONT_SUBHEADING);
+        l.setForeground(UITheme.TEXT_SECONDARY);
+        l.setPreferredSize(new Dimension(140, 28));
+        return l;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  DATA — load + filter
+    // ════════════════════════════════════════════════════════════════════
+    private void loadEntries() {
+        allEntries.clear();
+        PresetExerciseDB pdb = new PresetExerciseDB();
+        for (PresetExercise pe : pdb.getByType(FILTER_CARDIO))   allEntries.add(new Entry(pe));
+        for (PresetExercise pe : pdb.getByType(FILTER_STRENGTH)) allEntries.add(new Entry(pe));
+        for (Exercise ex : new ExerciseDB().getExercise())       allEntries.add(new Entry(ex));
+    }
+
+    private void applyFilter() {
+        if (listModel == null) return;
+        String q = searchField == null ? "" : searchField.getText().trim().toLowerCase();
+        listModel.clear();
+        for (Entry e : allEntries) {
+            boolean typeOk = activeFilter.equals(FILTER_ALL) || activeFilter.equalsIgnoreCase(e.type);
+            boolean searchOk = q.isEmpty()
+                    || e.name.toLowerCase().contains(q)
+                    || (e.muscleGroup != null && e.muscleGroup.toLowerCase().contains(q));
+            if (typeOk && searchOk) listModel.addElement(e);
         }
     }
 
-    /** Recalculates and displays cardio calories live */
+    // ════════════════════════════════════════════════════════════════════
+    //  SELECTION → detail pane
+    // ════════════════════════════════════════════════════════════════════
+    private void updateDetailPane(Entry e) {
+        chipsRow.removeAll();
+        statusLabel.setText(" ");
+
+        if (e == null) {
+            selectedName.setText("Select an exercise");
+            metaLabel.setText(" ");
+            formLayout.show(formContainer, "empty");
+            btnInsert.setEnabled(false);
+        } else {
+            selectedName.setText(e.name);
+            chipsRow.add(TagChip.forType(e.type));
+            TagChip muscleChip = TagChip.muscle(e.muscleGroup);
+            if (muscleChip != null) chipsRow.add(muscleChip);
+            chipsRow.add(e.preset ? TagChip.preset() : TagChip.custom());
+
+            if (FILTER_CARDIO.equalsIgnoreCase(e.type)) {
+                metaLabel.setText(String.format(
+                        "MET %.1f  •  Body weight %d kg  (update in profile)",
+                        e.met > 0 ? e.met : 5.0, (int) userWeightKg));
+                formLayout.show(formContainer, "cardio");
+                if (txtDuration != null) txtDuration.setText("");
+                if (lblCalcResult != null) lblCalcResult.setText("≈ — kcal");
+            } else {
+                metaLabel.setText("Strength training — log per set");
+                formLayout.show(formContainer, "strength");
+                if (txtReps != null)   txtReps.setText("");
+                if (txtWeight != null) txtWeight.setText("");
+            }
+            btnInsert.setEnabled(true);
+        }
+        chipsRow.revalidate();
+        chipsRow.repaint();
+    }
+
     private void recalcCardio() {
+        Entry sel = exerciseList.getSelectedValue();
+        if (sel == null || !FILTER_CARDIO.equalsIgnoreCase(sel.type)) return;
         try {
-            PresetExercise sel = (PresetExercise) cmbCardio.getSelectedItem();
             double minutes = Double.parseDouble(txtDuration.getText().trim());
-            double met = sel != null ? sel.getMet() : 5.0;
+            double met = sel.met > 0 ? sel.met : 5.0;
             double kcal = met * userWeightKg * (minutes / 60.0);
             lblCalcResult.setText(String.format("≈ %.0f kcal", kcal));
+            lblCalcResult.setForeground(UITheme.SUCCESS);
         } catch (NumberFormatException ex) {
             lblCalcResult.setText("≈ — kcal");
+            lblCalcResult.setForeground(UITheme.TEXT_MUTED);
         }
     }
 
-    class InsertListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            try {
-                Exercise ex = new Exercise();
-                double durationMinutes = 0;
+    // ════════════════════════════════════════════════════════════════════
+    //  INSERT
+    // ════════════════════════════════════════════════════════════════════
+    private void doInsert() {
+        Entry sel = exerciseList.getSelectedValue();
+        if (sel == null) {
+            setStatus("Select an exercise first.", UITheme.DANGER);
+            return;
+        }
 
-                if (rdoCardio.isSelected()) {
-                    if (txtDuration.getText().trim().isEmpty()) {
-                        JOptionPane.showMessageDialog(frame, "Please enter duration!");
-                        return;
-                    }
-                    PresetExercise sel = (PresetExercise) cmbCardio.getSelectedItem();
-                    durationMinutes = Double.parseDouble(txtDuration.getText().trim());
-                    double met = sel != null ? sel.getMet() : 5.0;
-                    double totalKcal = met * userWeightKg * (durationMinutes / 60.0);
+        try {
+            Exercise ex = new Exercise();
+            double durationMinutes = 0;
 
-                    ex.setExerciseName(sel != null ? sel.getExerciseName() : "Cardio");
-                    ex.setWorkoutType("Cardio");
-                    ex.setCalorieburn(totalKcal / Math.max(durationMinutes, 1));
-                    ex.setReps(0);
-                    ex.setWeightUsed(0);
-                    ex.setMuscleGroup("General");
+            if (FILTER_CARDIO.equalsIgnoreCase(sel.type)) {
+                String dur = txtDuration.getText().trim();
+                if (dur.isEmpty()) { setStatus("Please enter duration.", UITheme.DANGER); return; }
+                durationMinutes = Double.parseDouble(dur);
+                if (durationMinutes <= 0) { setStatus("Duration must be positive.", UITheme.DANGER); return; }
 
-                } else {
-                    if (txtReps.getText().trim().isEmpty() || txtWeight.getText().trim().isEmpty()) {
-                        JOptionPane.showMessageDialog(frame, "Please enter reps and weight!");
-                        return;
-                    }
-                    PresetExercise sel = (PresetExercise) cmbStrength.getSelectedItem();
-                    int reps = Integer.parseInt(txtReps.getText().trim());
-                    double weightKg = Double.parseDouble(txtWeight.getText().trim());
+                double met = sel.met > 0 ? sel.met : 5.0;
+                double totalKcal = met * userWeightKg * (durationMinutes / 60.0);
 
-                    ex.setExerciseName(sel != null ? sel.getExerciseName() : "Strength");
-                    ex.setWorkoutType("Strength");
-                    ex.setCalorieburn(0);
-                    ex.setReps(reps);
-                    ex.setWeightUsed(weightKg);
-                    String chosenMuscle = (String) cmbMuscleGroup.getSelectedItem();
-                    ex.setMuscleGroup("All".equals(chosenMuscle) ? (sel != null ? sel.getMuscleGroup() : "") : chosenMuscle);
+                ex.setExerciseName(sel.name);
+                ex.setWorkoutType(FILTER_CARDIO);
+                ex.setCalorieburn(totalKcal / Math.max(durationMinutes, 1));
+                ex.setReps(0);
+                ex.setWeightUsed(0);
+                ex.setMuscleGroup(sel.muscleGroup == null ? "General" : sel.muscleGroup);
+
+            } else {
+                String repsStr = txtReps.getText().trim();
+                String wStr    = txtWeight.getText().trim();
+                if (repsStr.isEmpty() || wStr.isEmpty()) {
+                    setStatus("Please enter both reps and weight.", UITheme.DANGER);
+                    return;
+                }
+                int reps = Integer.parseInt(repsStr);
+                double weightKg = Double.parseDouble(wStr);
+                if (reps <= 0 || weightKg < 0) {
+                    setStatus("Reps must be positive and weight non-negative.", UITheme.DANGER);
+                    return;
                 }
 
-                int newId = new ExerciseDB().insertExercise(ex);
-
-                // Iš karto įrašyti į dienos log'ą
-                if (newId > 0) {
-                    ExerciseLogDB logDB = new ExerciseLogDB();
-                    logDB.ensureDurationColumn();
-                    DailyExerciseLog log = new DailyExerciseLog();
-                    log.setExerciseId(newId);
-                    log.setUserId(userId);
-                    double calPerMin = ex.getCalorieburn();
-                    log.setTotalCalorieBurn(calPerMin * Math.max(durationMinutes, 1));
-                    log.setDurationMinutes(durationMinutes);
-                    logDB.insertDailyLog(log);
-                }
-
-                JOptionPane.showMessageDialog(frame, "Exercise Added!");
-                txtDuration.setText("");
-                txtReps.setText("");
-                txtWeight.setText("");
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(frame, "Please enter numeric values!");
+                ex.setExerciseName(sel.name);
+                ex.setWorkoutType(FILTER_STRENGTH);
+                ex.setCalorieburn(0);
+                ex.setReps(reps);
+                ex.setWeightUsed(weightKg);
+                ex.setMuscleGroup(sel.muscleGroup == null ? "" : sel.muscleGroup);
             }
+
+            int newId = new ExerciseDB().insertExercise(ex);
+
+            if (newId > 0) {
+                ExerciseLogDB logDB = new ExerciseLogDB();
+                logDB.ensureDurationColumn();
+                DailyExerciseLog log = new DailyExerciseLog();
+                log.setExerciseId(newId);
+                log.setUserId(userId);
+                double calPerMin = ex.getCalorieburn();
+                log.setTotalCalorieBurn(calPerMin * Math.max(durationMinutes, 1));
+                log.setDurationMinutes(durationMinutes);
+                logDB.insertDailyLog(log);
+            }
+
+            setStatus("Added: " + sel.name, UITheme.SUCCESS);
+            if (txtDuration != null) txtDuration.setText("");
+            if (txtReps     != null) txtReps.setText("");
+            if (txtWeight   != null) txtWeight.setText("");
+            if (lblCalcResult != null) lblCalcResult.setText("≈ — kcal");
+
+            // Refresh the list so any newly-saved custom exercise appears immediately.
+            loadEntries();
+            applyFilter();
+
+        } catch (NumberFormatException ex) {
+            setStatus("Please enter numeric values.", UITheme.DANGER);
+        }
+    }
+
+    private void setStatus(String text, Color color) {
+        statusLabel.setText(text);
+        statusLabel.setForeground(color);
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Custom list cell renderer — name + tag chips per row
+    // ════════════════════════════════════════════════════════════════════
+    private static class EntryRenderer extends JPanel implements ListCellRenderer<Entry> {
+        private final JLabel name = new JLabel();
+        private final JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_XS, 0));
+
+        EntryRenderer() {
+            setLayout(new BorderLayout());
+            setBorder(UITheme.padding(UITheme.SPACE_SM, UITheme.SPACE_MD));
+            chips.setOpaque(false);
+            name.setFont(UITheme.FONT_BODY_BOLD);
+
+            JPanel text = new JPanel();
+            text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+            text.setOpaque(false);
+            name.setAlignmentX(Component.LEFT_ALIGNMENT);
+            chips.setAlignmentX(Component.LEFT_ALIGNMENT);
+            text.add(name);
+            text.add(chips);
+            add(text, BorderLayout.CENTER);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList<? extends Entry> list, Entry e,
+                                                      int index, boolean selected, boolean focus) {
+            name.setText(e.name);
+            chips.removeAll();
+            chips.add(TagChip.forType(e.type));
+            TagChip m = TagChip.muscle(e.muscleGroup);
+            if (m != null) chips.add(m);
+            chips.add(e.preset ? TagChip.preset() : TagChip.custom());
+
+            if (selected) {
+                setBackground(new Color(UITheme.PRIMARY.getRed(), UITheme.PRIMARY.getGreen(), UITheme.PRIMARY.getBlue(), 28));
+                setOpaque(true);
+                name.setForeground(UITheme.TEXT_PRIMARY);
+            } else {
+                setBackground(UITheme.SURFACE);
+                setOpaque(true);
+                name.setForeground(UITheme.TEXT_PRIMARY);
+            }
+            return this;
         }
     }
 }
