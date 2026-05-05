@@ -7,7 +7,7 @@ public class User {
     private int age;
     private String password;
     private double height; // in centimeters
-    private double calorieGoal; // daily calorie goal, default 2000
+    private int calorieGoal = 2000; // daily calorie goal
 
     public String getPassword() {
         return password;
@@ -45,10 +45,10 @@ public class User {
     public void setHeight(double height) {
         this.height = height;
     }
-    public double getCalorieGoal() {
+    public int getCalorieGoal() {
         return calorieGoal;
     }
-    public void setCalorieGoal(double calorieGoal) {
+    public void setCalorieGoal(int calorieGoal) {
         this.calorieGoal = calorieGoal;
     }
 }

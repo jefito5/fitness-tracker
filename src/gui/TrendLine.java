@@ -1,27 +1,24 @@
 package gui;
 
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import javax.swing.JButton;
+import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.awt.event.ActionEvent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 
-import java.awt.Font;
-import javax.swing.JTextField;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.DateTickUnit;
+import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.labels.StandardXYItemLabelGenerator;
 import org.jfree.chart.plot.XYPlot;
@@ -35,257 +32,182 @@ import database.ConnectionFactory;
 import impl.WeightDB;
 import models.Weight;
 
+import theme.UITheme;
+import components.*;
+
 public class TrendLine {
 
     private JFrame frmTrendLine;
-    private JComboBox<Integer> comboBox;
-    private JComboBox<Integer> comboBox_1;
-    private JComboBox<Integer> comboBox_2;
-    private JComboBox<Integer> comboBox_3;
-    private JComboBox<Integer> comboBox_4;
-    private JComboBox<Integer> comboBox_5;
-    private JTextField textField;
-    private JLabel lblDay;
-    private JLabel label_2;
-    private JLabel lblMonth_1;
-    private JLabel lblDay_1;
-    private Connection connect;
+    private StyledComboBox<Integer> comboBox, comboBox_1, comboBox_2, comboBox_3, comboBox_4, comboBox_5;
     private int ids;
-    private JPanel panel;
+    private CardPanel chartContainer;
 
     public TrendLine(int id) {
-        ids = id;
-        connect = ConnectionFactory.getConnection();
+        this.ids = id;
         initialize();
     }
 
     private void initialize() {
-        frmTrendLine = new JFrame();
-        frmTrendLine.setTitle("Trend Line");
-        frmTrendLine.setBounds(100, 100, 1020, 520); 
+        frmTrendLine = new JFrame("Weight Trend Analysis");
+        frmTrendLine.setBounds(100, 100, 1100, 650); 
+        frmTrendLine.setLocationRelativeTo(null);
         frmTrendLine.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frmTrendLine.getContentPane().setLayout(null);
+        frmTrendLine.getContentPane().setBackground(UITheme.BACKGROUND);
         
-        JButton btnBack = new JButton("Back");
-        btnBack.setBounds(20, 15, 80, 30);
+        // Atgal mygtukas
+        RoundedButton btnBack = new RoundedButton("Back");
+        btnBack.setBounds(20, 15, 80, 35);
         frmTrendLine.getContentPane().add(btnBack);
-        
-        btnBack.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                frmTrendLine.dispose(); 
-                new PeriodSelect(ids); 
-            }
+        btnBack.addActionListener(e -> {
+            frmTrendLine.dispose(); 
+            new PeriodSelect(ids); 
         });
 
-        JLabel lblYourProgressReport = new JLabel("YOUR PROGRESS REPORT ON CHART");
-        lblYourProgressReport.setFont(new Font("Verdana", Font.BOLD, 22));
-        lblYourProgressReport.setBounds(280, 15, 500, 30);
-        frmTrendLine.getContentPane().add(lblYourProgressReport);
+        SectionHeader lblHeader = new SectionHeader("WEIGHT PROGRESS & TREND ANALYSIS");
+        lblHeader.setBounds(280, 15, 600, 35);
+        frmTrendLine.getContentPane().add(lblHeader);
 
-        JLabel lblFrom = new JLabel("FROM:");
-        lblFrom.setFont(new Font("Tahoma", Font.BOLD, 14));
-        lblFrom.setBounds(100, 70, 60, 20);
+// --- FILTRAI ---
+        int filterY = 75;
+        JLabel lblFrom = new JLabel("FROM:"); 
+        lblFrom.setFont(UITheme.FONT_SUBTITLE); 
+        lblFrom.setBounds(40, filterY, 60, 30); 
         frmTrendLine.getContentPane().add(lblFrom);
         
-        JLabel lblYear = new JLabel("Year:");
-        lblYear.setBounds(160, 70, 40, 20);
-        frmTrendLine.getContentPane().add(lblYear);
+        Integer[] years = {2026, 2027, 2028, 2029, 2030};
+        Integer[] months = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        Integer[] days = new Integer[31]; for(int i=0; i<31; i++) days[i] = i+1;
+
+        comboBox = new StyledComboBox<>(years); 
+        comboBox.setBounds(105, filterY, 90, 30); 
         
-        comboBox = new JComboBox<>();
-        comboBox.setBounds(195, 68, 70, 25);
-        for(int i=2026;i<=2032;i++) comboBox.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox);
+        comboBox_1 = new StyledComboBox<>(months); 
+        comboBox_1.setBounds(200, filterY, 75, 30); 
         
-        JLabel lblMonth = new JLabel("Month:");
-        lblMonth.setBounds(275, 70, 50, 20);
-        frmTrendLine.getContentPane().add(lblMonth);
+        comboBox_2 = new StyledComboBox<>(days); 
+        comboBox_2.setBounds(280, filterY, 75, 30); 
         
-        comboBox_1 = new JComboBox<>();
-        comboBox_1.setBounds(320, 68, 50, 25);
-        for(int i=1;i<=12;i++) comboBox_1.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox_1);
+        frmTrendLine.add(comboBox); frmTrendLine.add(comboBox_1); frmTrendLine.add(comboBox_2);
+
+        JLabel lblTo = new JLabel("TO:"); 
+        lblTo.setFont(UITheme.FONT_SUBTITLE); 
+        lblTo.setBounds(370, filterY, 40, 30); 
+        frmTrendLine.add(lblTo);
         
-        lblDay = new JLabel("Day:");
-        lblDay.setBounds(380, 70, 40, 20);
-        frmTrendLine.getContentPane().add(lblDay);
+        comboBox_3 = new StyledComboBox<>(years); 
+        comboBox_3.setBounds(410, filterY, 90, 30); 
         
-        comboBox_2 = new JComboBox<>();
-        comboBox_2.setBounds(415, 68, 50, 25);
-        for(int i=1;i<=31;i++) comboBox_2.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox_2);
-
-        JLabel lblTo = new JLabel("TO:");
-        lblTo.setFont(new Font("Tahoma", Font.BOLD, 14));
-        lblTo.setBounds(490, 70, 40, 20);
-        frmTrendLine.getContentPane().add(lblTo);
+        comboBox_4 = new StyledComboBox<>(months); 
+        comboBox_4.setBounds(505, filterY, 75, 30); 
         
-        label_2 = new JLabel("Year:");
-        label_2.setBounds(530, 70, 40, 20);
-        frmTrendLine.getContentPane().add(label_2);
+        comboBox_5 = new StyledComboBox<>(days); 
+        comboBox_5.setBounds(585, filterY, 75, 30); 
         
-        comboBox_3 = new JComboBox<>();
-        comboBox_3.setBounds(565, 68, 70, 25);
-        for(int i=2026;i<=2032;i++) comboBox_3.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox_3);
+        frmTrendLine.add(comboBox_3); frmTrendLine.add(comboBox_4); frmTrendLine.add(comboBox_5);
+
+        RoundedButton btnView = new RoundedButton("VIEW GRAPH");
+        btnView.setBounds(675, filterY, 160, 32);      
+        frmTrendLine.getContentPane().add(btnView);
+
+        // Pagrindinis konteineris grafikui
+        chartContainer = new CardPanel();
+        chartContainer.setBounds(20, 130, 1040, 450);
+        chartContainer.setLayout(new BorderLayout());
+        frmTrendLine.getContentPane().add(chartContainer);
         
-        lblMonth_1 = new JLabel("Month:");
-        lblMonth_1.setBounds(645, 70, 50, 20);
-        frmTrendLine.getContentPane().add(lblMonth_1);
-        
-        comboBox_4 = new JComboBox<>();
-        comboBox_4.setBounds(690, 68, 50, 25);
-        for(int i=1;i<=12;i++) comboBox_4.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox_4);
-        
-        lblDay_1 = new JLabel("Day:");
-        lblDay_1.setBounds(750, 70, 40, 20);
-        frmTrendLine.getContentPane().add(lblDay_1);
-        
-        comboBox_5 = new JComboBox<>();
-        comboBox_5.setBounds(785, 68, 50, 25);
-        for(int i=1;i<=31;i++) comboBox_5.addItem(i);
-        frmTrendLine.getContentPane().add(comboBox_5);
-
-        JButton btnNewButton = new JButton("VIEW GRAPH");
-        btnNewButton.setBounds(860, 65, 120, 30);      
-        frmTrendLine.getContentPane().add(btnNewButton);
-
-        panel = new JPanel();
-        panel.setBounds(20, 120, 960, 340);
-        panel.setLayout(new BorderLayout(0, 0));
-        frmTrendLine.getContentPane().add(panel);
-
-        textField = new JTextField();
-        textField.setBounds(3, 11, 86, 20);
-        textField.setText(String.valueOf(ids));
-        textField.setVisible(false);
-        frmTrendLine.getContentPane().add(textField);
-        
-        btnNewButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                
-                String startYear = comboBox.getSelectedItem().toString();
-                String startMonth = String.format("%02d", comboBox_1.getSelectedItem());
-                String startDay = String.format("%02d", comboBox_2.getSelectedItem());
-                
-                String endYear = comboBox_3.getSelectedItem().toString();
-                String endMonth = String.format("%02d", comboBox_4.getSelectedItem());
-                String endDay = String.format("%02d", comboBox_5.getSelectedItem());
-                
-                String startDate = startYear + "-" + startMonth + "-" + startDay;
-                String endDate = endYear + "-" + endMonth + "-" + endDay;
-                
-                WeightDB wdb = new WeightDB();
-                ArrayList<Weight> weights = wdb.getWeightsByDateRange(ids, startDate, endDate);
-                
-                if(weights.isEmpty()) {
-                    JOptionPane.showMessageDialog(frmTrendLine, "No weight records found for this period!");
-                    return;
-                }
-
-                TimeSeries weightSeries = new TimeSeries("Average Weight");
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-                for (Weight w : weights) {
-                    try {
-                        Date parsedDate = sdf.parse(w.getDate().toString()); 
-                        double weightValue = w.getAverage() > 0 ? w.getAverage() : w.getWeightM();
-                        weightSeries.addOrUpdate(new Day(parsedDate), weightValue);
-                    } catch (Exception ex) {
-                        System.out.println("Nepavyko perskaityti datos: " + w.getDate());
-                    }
-                }
-
-                TimeSeriesCollection dataset = new TimeSeriesCollection();
-                dataset.addSeries(weightSeries);
-
-                if (weightSeries.getItemCount() > 1) {
-                    double[] regression = Regression.getOLSRegression(dataset, 0);
-                    TimeSeries trendSeries = new TimeSeries("Trendline");
-                    
-                    long firstTime = weightSeries.getTimePeriod(0).getFirstMillisecond();
-                    long lastTime = weightSeries.getTimePeriod(weightSeries.getItemCount() - 1).getFirstMillisecond();
-                    
-                    double firstExpectedWeight = regression[0] + regression[1] * firstTime;
-                    double lastExpectedWeight = regression[0] + regression[1] * lastTime;
-                    
-                    trendSeries.add(weightSeries.getTimePeriod(0), firstExpectedWeight);
-                    trendSeries.add(weightSeries.getTimePeriod(weightSeries.getItemCount() - 1), lastExpectedWeight);
-                    
-                    dataset.addSeries(trendSeries);
-                }
-
-                JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                        "Average Weight Change", "Date", "Weight (kg)", 
-                        dataset, true, true, false);
-
-                XYPlot plot = chart.getXYPlot();
-
-                // --- 1. VERTIKALI AŠIS (WEIGHT) ---
-                NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-                rangeAxis.setAutoRangeIncludesZero(false);
-                rangeAxis.setStandardTickUnits(NumberAxis.createStandardTickUnits());
-                // PADIDINAME TARPĄ VIRŠUJE, KAD REIKŠMĖ NEBŪTŲ NUPJAUTA
-                rangeAxis.setUpperMargin(0.20); 
-
-                // --- 2. HORIZONTALI AŠIS (DATE) ---
-                org.jfree.chart.axis.DateAxis domainAxis = (org.jfree.chart.axis.DateAxis) plot.getDomainAxis();
-
-                // Sukuriame savo datų rodymo taisykles (neleidžiame skaidyti į valandas!)
-                org.jfree.chart.axis.TickUnits tickUnits = new org.jfree.chart.axis.TickUnits();
-                // Trumpam laikotarpiui: rodys kiekvieną dieną
-                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.DAY, 1, new java.text.SimpleDateFormat("yyyy-MM-dd")));
-                // Vidutiniam laikotarpiui: rodys kas savaitę (kas 7 dienas)
-                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.DAY, 7, new java.text.SimpleDateFormat("yyyy-MM-dd")));
-                // Ilgam laikotarpiui: rodys kas mėnesį
-                tickUnits.add(new org.jfree.chart.axis.DateTickUnit(org.jfree.chart.axis.DateTickUnitType.MONTH, 1, new java.text.SimpleDateFormat("yyyy-MM-dd")));
-
-                // Pritaikome šias taisykles ašiai
-                domainAxis.setStandardTickUnits(tickUnits);
-                domainAxis.setAutoTickUnitSelection(true); // Programa pati parinks tinkamiausią tarpą iš mūsų sąrašo
-
-                // Paraštės ir vertikalus tekstas
-                domainAxis.setLowerMargin(0.15);
-                domainAxis.setUpperMargin(0.15);
-                domainAxis.setVerticalTickLabels(true); // Datos bus vertikalios
-
-                // --- 3. RENDERER (LINIJOS IR REIKŠMĖS) ---
-                XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-                
-                // Formatas reikšmėms virš taškų
-                java.text.NumberFormat weightFormat = java.text.DecimalFormat.getNumberInstance();
-                weightFormat.setMaximumFractionDigits(1); 
-
-                renderer.setDefaultItemLabelGenerator(
-                    new StandardXYItemLabelGenerator("{2}", new SimpleDateFormat("yyyy-MM-dd"), weightFormat)
-                );
-                
-                // --- SVARBI DALIS: Rodyti svorį TIK mėlynai serijai (0), ne raudonai (1) ---
-                renderer.setSeriesItemLabelsVisible(0, true);
-                renderer.setSeriesItemLabelsVisible(1, false); 
-                renderer.setDefaultItemLabelFont(new Font("SansSerif", Font.BOLD, 12));
-                
-                renderer.setSeriesLinesVisible(0, true);
-                renderer.setSeriesShapesVisible(0, true); 
-                renderer.setSeriesPaint(0, Color.BLUE);
-                
-                if (dataset.getSeriesCount() > 1) {
-                    renderer.setSeriesLinesVisible(1, true);
-                    renderer.setSeriesShapesVisible(1, false); 
-                    renderer.setSeriesPaint(1, Color.RED);
-                    renderer.setSeriesStroke(1, new java.awt.BasicStroke(2.5f)); 
-                }
-                
-                plot.setRenderer(renderer);
-
-                ChartPanel chartPanel = new ChartPanel(chart);
-                panel.removeAll();
-                panel.add(chartPanel, BorderLayout.CENTER);
-                panel.validate();
-                panel.repaint();
-            }
-        });
+        btnView.addActionListener(e -> updateChart());
         
         frmTrendLine.setVisible(true);
+    }
+
+    private void updateChart() {
+        String startDate = String.format("%04d-%02d-%02d", comboBox.getSelectedItem(), comboBox_1.getSelectedItem(), comboBox_2.getSelectedItem());
+        String endDate = String.format("%04d-%02d-%02d", comboBox_3.getSelectedItem(), comboBox_4.getSelectedItem(), comboBox_5.getSelectedItem());
+        
+        WeightDB wdb = new WeightDB();
+        ArrayList<Weight> weights = wdb.getWeightsByDateRange(ids, startDate, endDate);
+        
+        if(weights.isEmpty()) {
+            StyledMessage.show("Info", "No records found for this period.");
+            return;
+        }
+
+        TimeSeries series = new TimeSeries("Daily Average");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (Weight w : weights) {
+            try {
+                // Konvertuojame SQL datą į JFreeChart suprantamą formatą
+                Date d = java.sql.Date.valueOf(w.getDate().toString());
+                double val = w.getAverage() > 0 ? w.getAverage() : w.getWeightM();
+                series.addOrUpdate(new Day(d), val);
+            } catch (Exception ignored) {}
+        }
+
+        TimeSeriesCollection dataset = new TimeSeriesCollection(series);
+
+        // Tendencijos linija (Regresija), jei yra bent 2 įrašai
+        if (series.getItemCount() > 1) {
+            double[] regression = Regression.getOLSRegression(dataset, 0);
+            TimeSeries trend = new TimeSeries("Trendline");
+            long t1 = series.getTimePeriod(0).getFirstMillisecond();
+            long t2 = series.getTimePeriod(series.getItemCount() - 1).getFirstMillisecond();
+            trend.add(series.getTimePeriod(0), regression[0] + regression[1] * t1);
+            trend.add(series.getTimePeriod(series.getItemCount() - 1), regression[0] + regression[1] * t2);
+            dataset.addSeries(trend);
+        }
+
+        JFreeChart chart = ChartFactory.createTimeSeriesChart("Weight Change Analysis", "Date", "Weight (kg)", dataset, true, true, false);
+        XYPlot plot = chart.getXYPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinePaint(UITheme.BORDER);
+        plot.setRangeGridlinePaint(UITheme.BORDER);
+
+        // --- X AŠIS (Išmanusis datų valdymas) ---
+        DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
+        domainAxis.setDateFormatOverride(sdf);
+        domainAxis.setVerticalTickLabels(true); // Kad nesuliptų
+        domainAxis.setLowerMargin(0.02);
+        domainAxis.setUpperMargin(0.02);
+
+        // --- Y AŠIS ---
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setAutoRangeIncludesZero(false);
+        rangeAxis.setUpperMargin(0.25); 
+
+        // --- RENDERER (Išmanusis atvaizdavimas) ---
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+        
+        // Išmanioji logika: rodome taškus ir skaičius TIK jei duomenų nėra per daug
+        boolean showDetails = weights.size() < 40; 
+        
+        renderer.setSeriesShapesVisible(0, showDetails);
+        renderer.setSeriesItemLabelsVisible(0, showDetails);
+        
+        if (showDetails) {
+            java.text.DecimalFormat df = new java.text.DecimalFormat("##.#");
+            renderer.setDefaultItemLabelGenerator(new StandardXYItemLabelGenerator("{2}", sdf, df));
+            renderer.setDefaultItemLabelFont(new Font("SansSerif", Font.BOLD, 11));
+        }
+
+        renderer.setSeriesPaint(0, UITheme.PRIMARY); // Mėlyna progresui
+        
+        if (dataset.getSeriesCount() > 1) {
+            renderer.setSeriesPaint(1, UITheme.ERROR); // Raudona tendencijai
+            renderer.setSeriesStroke(1, new java.awt.BasicStroke(2.0f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND, 1.0f, new float[]{8.0f, 8.0f}, 0.0f));
+            renderer.setSeriesShapesVisible(1, false);
+        }
+        
+        plot.setRenderer(renderer);
+
+        // Pridedame ChartPanel su Zoom funkcija (pelės ratuku)
+        ChartPanel chartPanel = new ChartPanel(chart);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.setDisplayToolTips(true);
+
+        chartContainer.removeAll();
+        chartContainer.add(chartPanel, BorderLayout.CENTER);
+        chartContainer.validate();
     }
 }
