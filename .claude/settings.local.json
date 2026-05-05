@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"X:/github/fitness-tracker\" branch --show-current)",
+      "Bash(git -C \"X:/github/fitness-tracker\" status --short)",
+      "Bash(git -C \"X:/github/fitness-tracker\" log --oneline -5)",
+      "Bash(git -C \"X:/github/fitness-tracker\" branch -a)",
+      "Bash(javac -d bin -cp \"lib/*\" @/tmp/sources.txt)",
+      "Bash(git -C \"X:/github/fitness-tracker\" diff --name-only HEAD)"
+    ]
+  }
+}

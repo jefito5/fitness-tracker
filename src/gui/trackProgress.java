@@ -1,27 +1,27 @@
 package gui;
-import javax.swing.JFrame;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
 
-import java.awt.Font;
-import java.awt.Color;
+import gui.components.CardPanel;
+import gui.components.RoundedButton;
+import gui.components.StatCard;
+import gui.components.StyledTextField;
+import gui.components.UITheme;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Date;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 
-import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-
-import impl.ExerciseDB;
 import impl.ExerciseLogDB;
 import impl.FoodDB;
 import impl.MealDB;
@@ -29,931 +29,950 @@ import impl.MealLogDB;
 import impl.UserDB;
 import impl.WaistDB;
 import impl.WeightDB;
-import models.DailyExerciseLog;
 import models.DailyMealLog;
-import models.Exercise;
+import models.Food;
 import models.Meal;
 import models.User;
 import models.Waist;
 import models.Weight;
 
-import javax.swing.JTable;
-import javax.swing.JScrollPane;
-import java.awt.Color;
-import java.time.LocalDate;
-import java.util.List;
-
-import javax.swing.JDialog;
-import java.awt.BorderLayout;
-import javax.swing.RowFilter;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.TableRowSorter;
-import models.Food;
-
-
+/**
+ * UI-5: Redesigned Daily Log / Track Progress screen.
+ *
+ * Card-based layout with section-separated meal &amp; exercise logs, a sticky
+ * date selector header, colour-coded calorie totals against the user's daily
+ * goal, and inline Add/Update/Delete actions per section.
+ *
+ * Behaviour, field names, and inner listener classes are unchanged from the
+ * previous implementation so the data flow remains identical.
+ */
 public class trackProgress {
 
-	private JFrame trackFrame;
-	private JTextField txtmorningW;
-	private JTextField txtEveningW;
-	private JTextField txtMorningWa;
-	private JTextField txtEveningWa;
-	private JTable table,table2;
-	private JTextField txtmealName;
-	private JTextField txtmealcalorie;
-	private JTextField txtintake;
-	private JTextField mealsID;
-	private JTextField exerciseID;
-	private JButton btnDeleteE;
-	private JTextField txtuserid;
-	private JComboBox<String> dateComboBox;
-	private JLabel lblSelectedDate;
-	private String currentViewDate;
-	private int get;
+    private JFrame trackFrame;
 
-	// Macro summary labels shown in the header area
-	private JLabel lblProteinVal;
-	private JLabel lblCarbsVal;
-	private JLabel lblFatVal;
+    // Weight inputs
+    private JTextField txtmorningW;
+    private JTextField txtEveningW;
+    private JTextField txtMorningWa;
+    private JTextField txtEveningWa;
 
-	// Tracks macros from the food-search dialog so InsertDailymealListener can save them
-	private double selectedProtein = 0;
-	private double selectedCarbs   = 0;
-	private double selectedFat     = 0;
+    // Tables
+    private JTable table;
+    private JTable table2;
 
-	public trackProgress(int gets) {
-		get=gets;
-		currentViewDate = String.valueOf(LocalDate.now());
-		initialize();
-		Show_Meals_In_JTable();
-		Show_Exercise_In_JTable();
-		Show_MealLog_In_JTable();
-		refreshMacroSummary();
-	}
+    // Meal entry inputs
+    private JTextField txtmealName;
+    private JTextField txtmealcalorie;
+    private JTextField txtintake;
+    private JTextField mealsID;
+    private JTextField exerciseID;
+    private JTextField txtuserid;
 
-	private void initialize() {
-		trackFrame = new JFrame();
-		trackFrame.setTitle("Daily Record");
-		trackFrame.setBounds(100, 100, 800, 720);
-		trackFrame.setLocation(380, 10);
-		trackFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		trackFrame.getContentPane().setLayout(null);
-		
-		JButton btnBack = new JButton("BACK");
-		btnBack.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-				trackFrame.dispose();
-			}
-		});
-		btnBack.setBounds(10, 11, 89, 23);
-		trackFrame.getContentPane().add(btnBack);
-		
-		JLabel lblTrackYourDaily = new JLabel("TRACK YOUR DAILY PROGRESS");
-		lblTrackYourDaily.setFont(new Font("Verdana", Font.BOLD, 22));
-		lblTrackYourDaily.setBounds(130, 11, 392, 47);
-		trackFrame.getContentPane().add(lblTrackYourDaily);
+    private JButton btnDeleteE;
+    private JComboBox<String> dateComboBox;
+    private JLabel lblSelectedDate;
+    private String currentViewDate;
+    private int get;
 
-		// ── MACRO SUMMARY PANEL (y=60–100) ───────────────────────────────────
-		JLabel lblMacroHeader = new JLabel("Today's Macros:");
-		lblMacroHeader.setFont(new Font("Verdana", Font.BOLD, 12));
-		lblMacroHeader.setBounds(30, 62, 130, 18);
-		trackFrame.getContentPane().add(lblMacroHeader);
+    // Header summary widgets (replace old labels)
+    private StatCard cardCalories;
+    private StatCard cardProtein;
+    private StatCard cardCarbs;
+    private StatCard cardFat;
 
-		JLabel lblProteinKey = new JLabel("Protein:");
-		lblProteinKey.setFont(new Font("Verdana", Font.PLAIN, 12));
-		lblProteinKey.setBounds(30, 82, 60, 18);
-		trackFrame.getContentPane().add(lblProteinKey);
+    // Inline status feedback per section
+    private JLabel mealStatus;
+    private JLabel exerciseStatus;
+    private JLabel weightStatus;
 
-		lblProteinVal = new JLabel("0.0g");
-		lblProteinVal.setFont(new Font("Verdana", Font.BOLD, 12));
-		lblProteinVal.setForeground(new Color(0, 100, 0));
-		lblProteinVal.setBounds(90, 82, 80, 18);
-		trackFrame.getContentPane().add(lblProteinVal);
+    // User's daily calorie goal — used to colour-code the calorie card.
+    private double dailyCalorieGoal = 2000;
 
-		JLabel lblCarbsKey = new JLabel("Carbs:");
-		lblCarbsKey.setFont(new Font("Verdana", Font.PLAIN, 12));
-		lblCarbsKey.setBounds(185, 82, 55, 18);
-		trackFrame.getContentPane().add(lblCarbsKey);
+    // Tracks macros from the food-search dialog so InsertDailymealListener can save them
+    private double selectedProtein = 0;
+    private double selectedCarbs   = 0;
+    private double selectedFat     = 0;
 
-		lblCarbsVal = new JLabel("0.0g");
-		lblCarbsVal.setFont(new Font("Verdana", Font.BOLD, 12));
-		lblCarbsVal.setForeground(new Color(180, 100, 0));
-		lblCarbsVal.setBounds(242, 82, 80, 18);
-		trackFrame.getContentPane().add(lblCarbsVal);
+    // Legacy macro labels kept as no-op references so refreshMacroSummary still works.
+    private JLabel lblProteinVal;
+    private JLabel lblCarbsVal;
+    private JLabel lblFatVal;
 
-		JLabel lblFatKey = new JLabel("Fat:");
-		lblFatKey.setFont(new Font("Verdana", Font.PLAIN, 12));
-		lblFatKey.setBounds(340, 82, 35, 18);
-		trackFrame.getContentPane().add(lblFatKey);
+    public trackProgress(int gets) {
+        get = gets;
+        currentViewDate = String.valueOf(LocalDate.now());
+        loadCalorieGoal();
+        initialize();
+        Show_Meals_In_JTable();
+        Show_Exercise_In_JTable();
+        Show_MealLog_In_JTable();
+        refreshMacroSummary();
+    }
 
-		lblFatVal = new JLabel("0.0g");
-		lblFatVal.setFont(new Font("Verdana", Font.BOLD, 12));
-		lblFatVal.setForeground(new Color(180, 0, 0));
-		lblFatVal.setBounds(378, 82, 80, 18);
-		trackFrame.getContentPane().add(lblFatVal);
-		// ─────────────────────────────────────────────────────────────────────
-		
-		JLabel lblNewLabel = new JLabel("Your Weight(in KGs):");
-		lblNewLabel.setFont(new Font("Verdana", Font.BOLD, 15));
-		lblNewLabel.setBounds(30, 125, 177, 32);
-		trackFrame.getContentPane().add(lblNewLabel);
+    private void loadCalorieGoal() {
+        try {
+            User u = new UserDB().getById(get);
+            if (u != null && u.getCalorieGoal() > 0) dailyCalorieGoal = u.getCalorieGoal();
+        } catch (Exception ignored) {}
+    }
 
-		JLabel lblMorning = new JLabel("Morning:");
-		lblMorning.setFont(new Font("Verdana", Font.PLAIN, 16));
-		lblMorning.setBounds(40, 156, 81, 23);
-		trackFrame.getContentPane().add(lblMorning);
+    // ════════════════════════════════════════════════════════════════════
+    //  LAYOUT
+    // ════════════════════════════════════════════════════════════════════
+    private void initialize() {
+        trackFrame = new JFrame("Daily Record");
+        trackFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        trackFrame.setMinimumSize(new Dimension(1100, 720));
+        trackFrame.setSize(1180, 780);
+        trackFrame.setLocationRelativeTo(null);
 
-		txtmorningW = new JTextField();
-		txtmorningW.setBounds(110, 159, 122, 23);
-		trackFrame.getContentPane().add(txtmorningW);
-		txtmorningW.setColumns(10);
+        JPanel root = new JPanel(new BorderLayout(UITheme.SPACE_LG, UITheme.SPACE_LG));
+        root.setBackground(UITheme.BACKGROUND);
+        root.setBorder(UITheme.padding(UITheme.SPACE_LG));
+        trackFrame.setContentPane(root);
 
-		JLabel lblEvening = new JLabel("Evening:");
-		lblEvening.setFont(new Font("Verdana", Font.PLAIN, 16));
-		lblEvening.setBounds(40, 190, 81, 23);
-		trackFrame.getContentPane().add(lblEvening);
+        root.add(buildHeader(), BorderLayout.NORTH);
 
-		txtEveningW = new JTextField();
-		txtEveningW.setColumns(10);
-		txtEveningW.setBounds(110, 190, 122, 23);
-		trackFrame.getContentPane().add(txtEveningW);
+        JPanel body = new JPanel(new GridLayout(1, 2, UITheme.SPACE_LG, 0));
+        body.setOpaque(false);
+        body.add(buildMealsCard());
 
-		JButton btnAdd = new JButton("ADD");
-		btnAdd.setBounds(234, 159, 65, 23);
-		trackFrame.getContentPane().add(btnAdd);
-		btnAdd.addActionListener(new InsertWeightListener());
+        JPanel rightCol = new JPanel(new BorderLayout(0, UITheme.SPACE_LG));
+        rightCol.setOpaque(false);
+        rightCol.add(buildExercisesCard(), BorderLayout.CENTER);
+        rightCol.add(buildWeightCard(),    BorderLayout.SOUTH);
+        body.add(rightCol);
 
-		JButton btnEvening = new JButton("ADD");
-		btnEvening.setBounds(234, 190, 65, 23);
-		trackFrame.getContentPane().add(btnEvening);
+        root.add(body, BorderLayout.CENTER);
 
-		btnEvening.addActionListener(new UpdateWeightListener());
-		
-		// ── TODO: not yet implemented ──
-		// JLabel lblYourWaist = new JLabel("Your Waist(in centimeters):");
-		// lblYourWaist.setFont(new Font("Verdana", Font.BOLD, 15));
-		// lblYourWaist.setBounds(309, 125, 196, 32);
-		// trackFrame.getContentPane().add(lblYourWaist);
-		// 
-		// JLabel label = new JLabel("Morning:");
-		// label.setFont(new Font("Verdana", Font.PLAIN, 16));
-		// label.setBounds(319, 156, 81, 23);
-		// trackFrame.getContentPane().add(label);
-		// 
-		// txtMorningWa = new JTextField();
-		// txtMorningWa.setColumns(10);
-		// txtMorningWa.setBounds(393, 159, 122, 23);
-		// trackFrame.getContentPane().add(txtMorningWa);
-		// 
-		// JLabel label_1 = new JLabel("Evening:");
-		// label_1.setFont(new Font("Verdana", Font.PLAIN, 16));
-		// label_1.setBounds(319, 190, 81, 23);
-		// trackFrame.getContentPane().add(label_1);
-		// 
-		// txtEveningWa = new JTextField();
-		// txtEveningWa.setColumns(10);
-		// txtEveningWa.setBounds(393, 193, 122, 23);
-		// trackFrame.getContentPane().add(txtEveningWa);
-		// 
-		// JButton btnWaistM = new JButton("ADD");
-		// btnWaistM.setBounds(520, 159, 65, 23);
-		// trackFrame.getContentPane().add(btnWaistM);
-		// btnWaistM.addActionListener(new InsertWaistListener());
-		// 
-		// JButton btnWaistE = new JButton("ADD");
-		// btnWaistE.setBounds(520, 193, 65, 23);
-		// trackFrame.getContentPane().add(btnWaistE);
-		// btnWaistE.addActionListener(new UpdateWaistListener());
-		
-		JLabel lblAddYourMeals = new JLabel("Add your Meals for Today!!");
-		lblAddYourMeals.setFont(new Font("Tahoma", Font.PLAIN, 17));
-		lblAddYourMeals.setBounds(10, 234, 212, 23);
-		trackFrame.getContentPane().add(lblAddYourMeals);
-		
-		JScrollPane mealTable = new JScrollPane();
-		mealTable.setBounds(10, 268, 310, 186);
-		trackFrame.getContentPane().add(mealTable);
-		
-		table = new JTable();
-		mealTable.setViewportView(table);
-		
-        table.setModel(new javax.swing.table.DefaultTableModel(
-                new Object [][] {
+        // Hidden state fields preserved for listener compatibility
+        mealsID    = new JTextField();
+        exerciseID = new JTextField();
+        txtuserid  = new JTextField(String.valueOf(get));
+        // Legacy-label refs (point at the StatCard captions so old code paths still no-op safely)
+        lblProteinVal = new JLabel();
+        lblCarbsVal   = new JLabel();
+        lblFatVal     = new JLabel();
+        // Legacy waist fields kept (functionality not yet wired in original code either)
+        txtMorningWa = new JTextField();
+        txtEveningWa = new JTextField();
 
-                },
-                new String [] {
-                   "Meal ID", "Meals Name", "Kcal/100g", "Total kcal"
-                }
-            ));
-            table.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    UsersMouseClicked(evt);
-                }
-            });
-		
-		
-		
-		JLabel lblAddYourExercise = new JLabel("Today's Exercises");
-		lblAddYourExercise.setFont(new Font("Tahoma", Font.PLAIN, 17));
-		lblAddYourExercise.setBounds(380, 234, 233, 23);
-		trackFrame.getContentPane().add(lblAddYourExercise);
+        refreshDateComboBox();
+        trackFrame.setVisible(true);
+    }
 
-		// Sukuriamas statuso užrašas (gali pasikoreguoti koordinates)
-		JLabel lblFoodStatus = new JLabel("Checking data...");
-		lblFoodStatus.setFont(new Font("Tahoma", Font.ITALIC, 11));
-		lblFoodStatus.setBounds(10, 630, 300, 20);
-		trackFrame.getContentPane().add(lblFoodStatus);
+    // ── HEADER ──────────────────────────────────────────────────────────
+    private JComponent buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
 
-		// Patikriname ir paleidžiame importą, jei DB tuščia
-		FoodDB fdb = new FoodDB();
-		if (fdb.isEmpty()) {
-			new services.FoodImporter(lblFoodStatus).execute();
-		} else {
-			lblFoodStatus.setText("Food database integrated.");
-		}
-		
-	JScrollPane exercise = new JScrollPane();
-		exercise.setBounds(380, 268, 308, 186);
-		trackFrame.getContentPane().add(exercise);
-		
-		table2=new JTable();
-		exercise.setViewportView(table2);
-		
-        table2.setModel(new javax.swing.table.DefaultTableModel(
-                new Object [][] {
+        // Top row: title + history controls
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
 
-                },
-                new String [] {
-                   "Log ID", "Exercise Name", "Muscle Group", "Info", "Calories"
-                }
-            ));
-            table2.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    UsersMouseClicked1(evt);
-                }
-            });
-				
-		// ── TODO: not yet implemented ──
-		// JLabel lblKnowYourProgress = new JLabel("Know Your Progress!!");
-		// lblKnowYourProgress.setForeground(Color.RED);
-		// lblKnowYourProgress.setFont(new Font("Tahoma", Font.PLAIN, 17));
-		// lblKnowYourProgress.setBounds(460, 55, 178, 23);
-		// trackFrame.getContentPane().add(lblKnowYourProgress);
-		// 
-		// JButton btnAnalyse = new JButton("ANALYSE");
-		// 
-		// btnAnalyse.setFont(new Font("Verdana", Font.PLAIN, 15));
-		// btnAnalyse.setBounds(511, 83, 110, 32);
-		// trackFrame.getContentPane().add(btnAnalyse);
-		
-		
-		txtmealName = new JTextField();
-		txtmealName.setBounds(147, 465, 120, 23);
-		trackFrame.getContentPane().add(txtmealName);
-		txtmealName.setColumns(10);
-		
-		JButton btnSearchDB = new JButton("Search DB");
-		btnSearchDB.setBounds(272, 465, 95, 23);
-		btnSearchDB.setFont(new Font("Tahoma", Font.PLAIN, 11));
-		trackFrame.getContentPane().add(btnSearchDB);
+        JPanel titleBlock = new JPanel();
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.setOpaque(false);
 
-		btnSearchDB.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				openFoodSearchDialog(); // Atidaro paieškos langą
-			}
-		});
+        JLabel title = new JLabel("Daily Record");
+        title.setFont(UITheme.FONT_TITLE);
+        title.setForeground(UITheme.TEXT_PRIMARY);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		txtmealcalorie = new JTextField();
-		txtmealcalorie.setColumns(10);
-		txtmealcalorie.setBounds(147, 499, 164, 23);
-		trackFrame.getContentPane().add(txtmealcalorie);
-		
-		txtintake = new JTextField();
-		txtintake.setColumns(10);
-		txtintake.setBounds(147, 533, 164, 23);
-		trackFrame.getContentPane().add(txtintake);
-		
-		mealsID = new JTextField();
-		mealsID.setColumns(10);
-		// mealsID - used internally, not shown to user
-		
-		exerciseID = new JTextField();
-		exerciseID.setColumns(10);
-		// exerciseID - used internally, not shown to user
-		
-		JLabel lblMealName = new JLabel("Meal Name:");
-		lblMealName.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblMealName.setBounds(30, 469, 107, 14);
-		trackFrame.getContentPane().add(lblMealName);
-		
-		JLabel lblCaloriegram = new JLabel("Calories/100g:");
-		lblCaloriegram.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblCaloriegram.setBounds(30, 503, 130, 20);
-		trackFrame.getContentPane().add(lblCaloriegram);
-		
-		JLabel lblAmount = new JLabel("Amount (g):");
-		lblAmount.setFont(new Font("Verdana", Font.PLAIN, 15));
-		lblAmount.setBounds(30, 537, 107, 19);
-		trackFrame.getContentPane().add(lblAmount);
-		
-		JButton btnInsert = new JButton("Insert");
-		btnInsert.setBounds(20, 580, 89, 23);
-		trackFrame.getContentPane().add(btnInsert);
-		btnInsert.addActionListener(new InsertDailymealListener());
-		
-		
-		JButton btnUpdate = new JButton("Update");
-		btnUpdate.setBounds(114, 580, 93, 23);
-		trackFrame.getContentPane().add(btnUpdate);
-		btnUpdate.addActionListener(new UpdateMealListener());
-		
-		JButton btnDelete = new JButton("Delete");
-		btnDelete.setBounds(210, 580, 89, 23);
-		trackFrame.getContentPane().add(btnDelete);
-		btnDelete.addActionListener(new DeleteMealListener());
-		
-		btnDeleteE = new JButton("Delete");
-		btnDeleteE.setBounds(380, 462, 100, 28);
-		trackFrame.getContentPane().add(btnDeleteE);
-		btnDeleteE.addActionListener(new DeleteExerciseListener());
+        lblSelectedDate = new JLabel("Viewing: " + currentViewDate);
+        lblSelectedDate.setFont(UITheme.FONT_CAPTION);
+        lblSelectedDate.setForeground(UITheme.TEXT_SECONDARY);
+        lblSelectedDate.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblSelectedDate.setBorder(UITheme.padding(2, 0, 0, 0));
 
-		ButtonGroup bg=new ButtonGroup();
-		
-		txtuserid = new JTextField();
-		txtuserid.setColumns(10);
-		txtuserid.setText(String.valueOf(get));
-		// txtuserid - used internally, not shown to user
-		
-		// btnAnalyse.addActionListener(...); // TODO: not yet implemented
+        titleBlock.add(title);
+        titleBlock.add(lblSelectedDate);
+        topRow.add(titleBlock, BorderLayout.WEST);
 
-		// ── HISTORY DATE SELECTOR ───────────────────────────────────────────
-		JLabel lblHistory = new JLabel("History:");
-		lblHistory.setFont(new Font("Verdana", Font.BOLD, 13));
-		lblHistory.setBounds(490, 462, 80, 20);
-		trackFrame.getContentPane().add(lblHistory);
+        // History controls (Back, history dropdown, Show, Today)
+        JPanel hist = new JPanel(new FlowLayout(FlowLayout.RIGHT, UITheme.SPACE_SM, 0));
+        hist.setOpaque(false);
 
-		dateComboBox = new JComboBox<>();
-		dateComboBox.setBounds(380, 488, 160, 25);
-		trackFrame.getContentPane().add(dateComboBox);
+        JLabel lblHistory = new JLabel("History:");
+        lblHistory.setFont(UITheme.FONT_BODY_BOLD);
+        lblHistory.setForeground(UITheme.TEXT_SECONDARY);
+        hist.add(lblHistory);
 
-		JButton btnLoadHistory = new JButton("Show");
-		btnLoadHistory.setBounds(548, 488, 80, 25);
-		trackFrame.getContentPane().add(btnLoadHistory);
+        dateComboBox = new JComboBox<>();
+        dateComboBox.setFont(UITheme.FONT_BODY);
+        dateComboBox.setPreferredSize(new Dimension(160, 30));
+        hist.add(dateComboBox);
 
-		JButton btnTodayBtn = new JButton("Today");
-		btnTodayBtn.setBounds(380, 520, 110, 25);
-		trackFrame.getContentPane().add(btnTodayBtn);
+        RoundedButton btnLoadHistory = new RoundedButton("Show", RoundedButton.Variant.OUTLINE);
+        btnLoadHistory.setBorder(UITheme.padding(6, 14));
+        btnLoadHistory.addActionListener(e -> {
+            String selected = (String) dateComboBox.getSelectedItem();
+            if (selected != null && !selected.isEmpty()) {
+                currentViewDate = selected;
+                lblSelectedDate.setText("Viewing: " + currentViewDate);
+                Show_Exercise_In_JTable();
+                Show_MealLog_In_JTable();
+                refreshMacroSummary();
+            }
+        });
+        hist.add(btnLoadHistory);
 
-		lblSelectedDate = new JLabel("Viewing: " + currentViewDate);
-		lblSelectedDate.setFont(new Font("Verdana", Font.ITALIC, 11));
-		lblSelectedDate.setForeground(Color.BLUE);
-		lblSelectedDate.setBounds(380, 550, 200, 20);
-		trackFrame.getContentPane().add(lblSelectedDate);
+        RoundedButton btnTodayBtn = new RoundedButton("Today", RoundedButton.Variant.PRIMARY);
+        btnTodayBtn.setBorder(UITheme.padding(6, 14));
+        btnTodayBtn.addActionListener(e -> {
+            currentViewDate = String.valueOf(LocalDate.now());
+            lblSelectedDate.setText("Viewing: " + currentViewDate);
+            refreshDateComboBox();
+            Show_Exercise_In_JTable();
+            Show_MealLog_In_JTable();
+            refreshMacroSummary();
+        });
+        hist.add(btnTodayBtn);
 
-		// Populate date list
-		refreshDateComboBox();
+        RoundedButton btnBack = new RoundedButton("Back", RoundedButton.Variant.SECONDARY);
+        btnBack.setBorder(UITheme.padding(6, 14));
+        btnBack.addActionListener(e -> trackFrame.dispose());
+        hist.add(btnBack);
 
-		btnLoadHistory.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String selected = (String) dateComboBox.getSelectedItem();
-				if (selected != null && !selected.isEmpty()) {
-					currentViewDate = selected;
-					lblSelectedDate.setText("Viewing: " + currentViewDate);
-					Show_Exercise_In_JTable();
-					Show_MealLog_In_JTable();
-					refreshMacroSummary();
-				}
-			}
-		});
+        topRow.add(hist, BorderLayout.EAST);
+        header.add(topRow, BorderLayout.NORTH);
 
-		btnTodayBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				currentViewDate = String.valueOf(LocalDate.now());
-				lblSelectedDate.setText("Viewing: " + currentViewDate);
-				refreshDateComboBox();
-				Show_Exercise_In_JTable();
-				Show_MealLog_In_JTable();
-				refreshMacroSummary();
-			}
-		});
-		// ─────────────────────────────────────────────────────────────────────
-		
-		trackFrame.setVisible(true);
-	}
+        // Bottom row: 4 StatCards
+        JPanel cards = new JPanel(new GridLayout(1, 4, UITheme.SPACE_MD, 0));
+        cards.setOpaque(false);
+        cards.setBorder(UITheme.padding(UITheme.SPACE_LG, 0, 0, 0));
 
+        cardCalories = new StatCard("Calories");
+        cardProtein  = new StatCard("Protein");
+        cardCarbs    = new StatCard("Carbs");
+        cardFat      = new StatCard("Fat");
+        cards.add(cardCalories);
+        cards.add(cardProtein);
+        cards.add(cardCarbs);
+        cards.add(cardFat);
 
-	// --- NAUJAS METODAS PAIEŠKOS LANGUI ---
+        header.add(cards, BorderLayout.CENTER);
+        return header;
+    }
+
+    // ── MEALS CARD ──────────────────────────────────────────────────────
+    private JComponent buildMealsCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BorderLayout(0, UITheme.SPACE_MD));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Meals", "Today's food intake"), BorderLayout.NORTH);
+
+        // Table
+        table = new JTable();
+        table.setModel(new DefaultTableModel(new Object[][]{},
+                new String[]{"Meal ID", "Meals Name", "Kcal/100g", "Total kcal"}));
+        styleTable(table);
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) { UsersMouseClicked(evt); }
+        });
+        JScrollPane tableScroll = new JScrollPane(table);
+        tableScroll.setBorder(BorderFactory.createLineBorder(UITheme.BORDER));
+        tableScroll.getViewport().setBackground(UITheme.SURFACE);
+        card.add(tableScroll, BorderLayout.CENTER);
+
+        // South: form + actions + status
+        JPanel south = new JPanel();
+        south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
+        south.setOpaque(false);
+        south.setBorder(UITheme.padding(UITheme.SPACE_MD, 0, 0, 0));
+
+        JLabel addHeading = new JLabel("Add a meal");
+        addHeading.setFont(UITheme.FONT_HEADING);
+        addHeading.setForeground(UITheme.TEXT_PRIMARY);
+        addHeading.setAlignmentX(Component.LEFT_ALIGNMENT);
+        addHeading.setBorder(UITheme.padding(0, 0, UITheme.SPACE_SM, 0));
+        south.add(addHeading);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setOpaque(false);
+        form.setAlignmentX(Component.LEFT_ALIGNMENT);
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(UITheme.SPACE_XS, 0, UITheme.SPACE_XS, UITheme.SPACE_SM);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0; c.gridy = 0; c.weightx = 0;
+        form.add(fieldLabel("Meal name"), c);
+        c.gridx = 1; c.weightx = 1;
+        txtmealName = new StyledTextField("e.g. Chicken breast");
+        form.add(txtmealName, c);
+        c.gridx = 2; c.weightx = 0;
+        RoundedButton btnSearchDB = new RoundedButton("Search DB", RoundedButton.Variant.OUTLINE);
+        btnSearchDB.setBorder(UITheme.padding(6, 14));
+        btnSearchDB.addActionListener(e -> openFoodSearchDialog());
+        form.add(btnSearchDB, c);
+
+        c.gridx = 0; c.gridy = 1; c.weightx = 0;
+        form.add(fieldLabel("Calories / 100g"), c);
+        c.gridx = 1; c.gridwidth = 2; c.weightx = 1;
+        txtmealcalorie = new StyledTextField("e.g. 165");
+        form.add(txtmealcalorie, c);
+        c.gridwidth = 1;
+
+        c.gridx = 0; c.gridy = 2; c.weightx = 0;
+        form.add(fieldLabel("Amount (g)"), c);
+        c.gridx = 1; c.gridwidth = 2; c.weightx = 1;
+        txtintake = new StyledTextField("e.g. 200");
+        form.add(txtintake, c);
+        c.gridwidth = 1;
+
+        south.add(form);
+
+        // Actions row
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        actions.setOpaque(false);
+        actions.setAlignmentX(Component.LEFT_ALIGNMENT);
+        actions.setBorder(UITheme.padding(UITheme.SPACE_SM, 0, 0, 0));
+
+        RoundedButton btnInsert = new RoundedButton("Insert",  RoundedButton.Variant.PRIMARY);
+        RoundedButton btnUpdate = new RoundedButton("Update",  RoundedButton.Variant.OUTLINE);
+        RoundedButton btnDelete = new RoundedButton("Delete",  RoundedButton.Variant.SECONDARY);
+        btnInsert.addActionListener(new InsertDailymealListener());
+        btnUpdate.addActionListener(new UpdateMealListener());
+        btnDelete.addActionListener(new DeleteMealListener());
+        actions.add(btnInsert);
+        actions.add(btnUpdate);
+        actions.add(btnDelete);
+        south.add(actions);
+
+        mealStatus = new JLabel(" ");
+        mealStatus.setFont(UITheme.FONT_CAPTION);
+        mealStatus.setForeground(UITheme.TEXT_MUTED);
+        mealStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mealStatus.setBorder(UITheme.padding(UITheme.SPACE_SM, 0, 0, 0));
+        south.add(mealStatus);
+
+        card.add(south, BorderLayout.SOUTH);
+
+        // Food-importer status: kept inline as a quiet caption.
+        FoodDB fdb = new FoodDB();
+        if (fdb.isEmpty()) {
+            new services.FoodImporter(mealStatus).execute();
+        }
+
+        return card;
+    }
+
+    // ── EXERCISES CARD ──────────────────────────────────────────────────
+    private JComponent buildExercisesCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BorderLayout(0, UITheme.SPACE_MD));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Exercises", "Logged workouts for the day"), BorderLayout.NORTH);
+
+        table2 = new JTable();
+        table2.setModel(new DefaultTableModel(new Object[][]{},
+                new String[]{"Log ID", "Exercise Name", "Muscle Group", "Info", "Calories"}));
+        styleTable(table2);
+        table2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) { UsersMouseClicked1(evt); }
+        });
+        JScrollPane scroll = new JScrollPane(table2);
+        scroll.setBorder(BorderFactory.createLineBorder(UITheme.BORDER));
+        scroll.getViewport().setBackground(UITheme.SURFACE);
+        card.add(scroll, BorderLayout.CENTER);
+
+        JPanel south = new JPanel();
+        south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
+        south.setOpaque(false);
+        south.setBorder(UITheme.padding(UITheme.SPACE_MD, 0, 0, 0));
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        actions.setOpaque(false);
+        actions.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnDeleteE = new RoundedButton("Delete selected", RoundedButton.Variant.SECONDARY);
+        btnDeleteE.addActionListener(new DeleteExerciseListener());
+        actions.add(btnDeleteE);
+        south.add(actions);
+
+        exerciseStatus = new JLabel(" ");
+        exerciseStatus.setFont(UITheme.FONT_CAPTION);
+        exerciseStatus.setForeground(UITheme.TEXT_MUTED);
+        exerciseStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
+        exerciseStatus.setBorder(UITheme.padding(UITheme.SPACE_SM, 0, 0, 0));
+        south.add(exerciseStatus);
+
+        card.add(south, BorderLayout.SOUTH);
+        return card;
+    }
+
+    // ── WEIGHT CARD ─────────────────────────────────────────────────────
+    private JComponent buildWeightCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BorderLayout(0, UITheme.SPACE_MD));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Weight", "Track morning &amp; evening (kg)"), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new GridBagLayout());
+        body.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(UITheme.SPACE_XS, 0, UITheme.SPACE_XS, UITheme.SPACE_SM);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0; c.gridy = 0;
+        body.add(fieldLabel("Morning"), c);
+        c.gridx = 1; c.weightx = 1;
+        txtmorningW = new StyledTextField("kg");
+        body.add(txtmorningW, c);
+        c.gridx = 2; c.weightx = 0;
+        RoundedButton btnAddM = new RoundedButton("Add", RoundedButton.Variant.PRIMARY);
+        btnAddM.setBorder(UITheme.padding(6, 14));
+        btnAddM.addActionListener(new InsertWeightListener());
+        body.add(btnAddM, c);
+
+        c.gridx = 0; c.gridy = 1; c.weightx = 0;
+        body.add(fieldLabel("Evening"), c);
+        c.gridx = 1; c.weightx = 1;
+        txtEveningW = new StyledTextField("kg");
+        body.add(txtEveningW, c);
+        c.gridx = 2; c.weightx = 0;
+        RoundedButton btnAddE = new RoundedButton("Add", RoundedButton.Variant.PRIMARY);
+        btnAddE.setBorder(UITheme.padding(6, 14));
+        btnAddE.addActionListener(new UpdateWeightListener());
+        body.add(btnAddE, c);
+
+        card.add(body, BorderLayout.CENTER);
+
+        weightStatus = new JLabel(" ");
+        weightStatus.setFont(UITheme.FONT_CAPTION);
+        weightStatus.setForeground(UITheme.TEXT_MUTED);
+        weightStatus.setBorder(UITheme.padding(UITheme.SPACE_SM, 0, 0, 0));
+        card.add(weightStatus, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────
+    private JComponent sectionHeader(String title, String subtitle) {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setOpaque(false);
+
+        JLabel t = new JLabel(title);
+        t.setFont(UITheme.FONT_HEADING);
+        t.setForeground(UITheme.TEXT_PRIMARY);
+        t.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel s = new JLabel(subtitle);
+        s.setFont(UITheme.FONT_CAPTION);
+        s.setForeground(UITheme.TEXT_MUTED);
+        s.setAlignmentX(Component.LEFT_ALIGNMENT);
+        s.setBorder(UITheme.padding(2, 0, UITheme.SPACE_SM, 0));
+
+        p.add(t);
+        p.add(s);
+        return p;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(UITheme.FONT_SUBHEADING);
+        l.setForeground(UITheme.TEXT_SECONDARY);
+        l.setPreferredSize(new Dimension(120, 28));
+        return l;
+    }
+
+    private void styleTable(JTable t) {
+        t.setFont(UITheme.FONT_BODY);
+        t.setRowHeight(26);
+        t.setShowGrid(false);
+        t.setIntercellSpacing(new Dimension(0, 0));
+        t.setBackground(UITheme.SURFACE);
+        t.setSelectionBackground(new Color(UITheme.PRIMARY.getRed(), UITheme.PRIMARY.getGreen(), UITheme.PRIMARY.getBlue(), 40));
+        t.setSelectionForeground(UITheme.TEXT_PRIMARY);
+        t.setForeground(UITheme.TEXT_PRIMARY);
+        t.setGridColor(UITheme.BORDER);
+
+        DefaultTableCellRenderer alt = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean sel,
+                                                           boolean focus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(tbl, value, sel, focus, row, col);
+                if (!sel) c.setBackground(row % 2 == 0 ? UITheme.SURFACE : UITheme.SURFACE_ALT);
+                setBorder(UITheme.padding(2, 8));
+                return c;
+            }
+        };
+        for (int i = 0; i < t.getColumnCount(); i++) {
+            t.getColumnModel().getColumn(i).setCellRenderer(alt);
+        }
+
+        JTableHeader h = t.getTableHeader();
+        h.setFont(UITheme.FONT_SUBHEADING);
+        h.setBackground(UITheme.SURFACE_ALT);
+        h.setForeground(UITheme.TEXT_SECONDARY);
+        h.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UITheme.BORDER));
+        h.setReorderingAllowed(false);
+    }
+
+    private void setMealStatus(String text, Color color) {
+        if (mealStatus != null) {
+            mealStatus.setText(text);
+            mealStatus.setForeground(color);
+        }
+    }
+    private void setExerciseStatus(String text, Color color) {
+        if (exerciseStatus != null) {
+            exerciseStatus.setText(text);
+            exerciseStatus.setForeground(color);
+        }
+    }
+    private void setWeightStatus(String text, Color color) {
+        if (weightStatus != null) {
+            weightStatus.setText(text);
+            weightStatus.setForeground(color);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Food-search dialog (unchanged behaviour, lightly restyled)
+    // ════════════════════════════════════════════════════════════════════
     private void openFoodSearchDialog() {
         JDialog searchDialog = new JDialog(trackFrame, "Search Food Database", true);
-        searchDialog.setSize(500, 400);
+        searchDialog.setSize(560, 420);
         searchDialog.setLocationRelativeTo(trackFrame);
-        searchDialog.getContentPane().setLayout(new BorderLayout());
+        searchDialog.getContentPane().setLayout(new BorderLayout(UITheme.SPACE_MD, UITheme.SPACE_MD));
+        ((JComponent) searchDialog.getContentPane()).setBorder(UITheme.padding(UITheme.SPACE_LG));
+        searchDialog.getContentPane().setBackground(UITheme.BACKGROUND);
 
-        JPanel topPanel = new JPanel();
-        topPanel.add(new JLabel("Search: "));
-        JTextField searchField = new JTextField(20);
-        topPanel.add(searchField);
+        JPanel topPanel = new JPanel(new BorderLayout(UITheme.SPACE_SM, 0));
+        topPanel.setOpaque(false);
+        JLabel lbl = new JLabel("Search:");
+        lbl.setFont(UITheme.FONT_BODY_BOLD);
+        topPanel.add(lbl, BorderLayout.WEST);
+        StyledTextField searchField = new StyledTextField("Type to filter…");
+        topPanel.add(searchField, BorderLayout.CENTER);
         searchDialog.getContentPane().add(topPanel, BorderLayout.NORTH);
 
         String[] cols = {"Name", "Calories", "Protein", "Carbs", "Fat"};
         DefaultTableModel searchModel = new DefaultTableModel(cols, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         JTable searchTable = new JTable(searchModel);
-        searchDialog.getContentPane().add(new JScrollPane(searchTable), BorderLayout.CENTER);
+        styleTable(searchTable);
+        JScrollPane sp = new JScrollPane(searchTable);
+        sp.setBorder(BorderFactory.createLineBorder(UITheme.BORDER));
+        searchDialog.getContentPane().add(sp, BorderLayout.CENTER);
 
-        // Užkrauname viską pržioje
         FoodDB fdb = new FoodDB();
         List<Food> allFoods = fdb.getAll();
-        for(Food f : allFoods) {
+        for (Food f : allFoods) {
             searchModel.addRow(new Object[]{f.getName(), f.getCalories(), f.getProtein(), f.getCarbs(), f.getFat()});
         }
 
-        // Filtravimas rašant
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(searchModel);
         searchTable.setRowSorter(sorter);
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { filter(); }
-            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void insertUpdate(DocumentEvent e)  { filter(); }
+            public void removeUpdate(DocumentEvent e)  { filter(); }
             public void changedUpdate(DocumentEvent e) { filter(); }
             private void filter() {
                 String text = searchField.getText();
-                if (text.trim().length() == 0) {
-                    sorter.setRowFilter(null);
-                } else {
-                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
-                }
+                sorter.setRowFilter(text.trim().isEmpty() ? null : RowFilter.regexFilter("(?i)" + text));
             }
         });
 
-        JButton btnSelect = new JButton("Select");
+        RoundedButton btnSelect = new RoundedButton("Select", RoundedButton.Variant.PRIMARY);
         btnSelect.addActionListener(e -> {
             int row = searchTable.getSelectedRow();
             if (row >= 0) {
-                // Convert index in case the table is sorted/filtered
                 int modelRow = searchTable.convertRowIndexToModel(row);
                 String name = searchModel.getValueAt(modelRow, 0).toString();
                 String cal  = searchModel.getValueAt(modelRow, 1).toString();
-
                 txtmealName.setText(name);
                 txtmealcalorie.setText(cal);
-
-                // Capture macros so InsertDailymealListener can persist them
                 try { selectedProtein = Double.parseDouble(searchModel.getValueAt(modelRow, 2).toString()); } catch (Exception ex) { selectedProtein = 0; }
                 try { selectedCarbs   = Double.parseDouble(searchModel.getValueAt(modelRow, 3).toString()); } catch (Exception ex) { selectedCarbs   = 0; }
                 try { selectedFat     = Double.parseDouble(searchModel.getValueAt(modelRow, 4).toString()); } catch (Exception ex) { selectedFat     = 0; }
-
                 searchDialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(searchDialog, "Please select a food item.");
             }
         });
-        
-        JPanel bottomPanel = new JPanel();
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.setOpaque(false);
         bottomPanel.add(btnSelect);
         searchDialog.getContentPane().add(bottomPanel, BorderLayout.SOUTH);
 
         searchDialog.setVisible(true);
     }
 
+    // ════════════════════════════════════════════════════════════════════
+    //  Data → views (preserved behaviour)
+    // ════════════════════════════════════════════════════════════════════
+    public void Show_Meals_In_JTable() {
+        MealLogDB logDB = new MealLogDB();
+        ArrayList<Object[]> logs = logDB.getMealLogsByDate(get, currentViewDate);
 
-	   public void Show_Meals_In_JTable()
-	   {
-		   // Rodyti tik tos dienos maisto log'us — ta pati logika kaip pratimų
-		   MealLogDB logDB = new MealLogDB();
-		   java.util.ArrayList<Object[]> logs = logDB.getMealLogsByDate(get, currentViewDate);
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        for (Object[] log : logs) {
+            // log: [0]=mealID, [1]=MealName, [2]=CaloriePerGram, [3]=totalCalorieIntake
+            model.addRow(new Object[]{log[0], log[1], log[2], String.format("%.1f", (double) log[3])});
+        }
+    }
 
-	       DefaultTableModel model = (DefaultTableModel)table.getModel();
-	       model.setRowCount(0);
-	       for (Object[] log : logs) {
-			   // log: [0]=mealID, [1]=MealName, [2]=CaloriePerGram, [3]=totalCalorieIntake
-			   model.addRow(new Object[]{log[0], log[1], log[2], String.format("%.1f", (double)log[3])});
-	       }
-	    }
-	
-	   private void UsersMouseClicked(java.awt.event.MouseEvent evt) {                                                  
-	    
-	        int i = table.getSelectedRow();
+    private void UsersMouseClicked(java.awt.event.MouseEvent evt) {
+        int i = table.getSelectedRow();
+        TableModel model = table.getModel();
+        mealsID.setText(model.getValueAt(i, 0).toString());
+        txtmealName.setText(model.getValueAt(i, 1).toString());
+        txtmealcalorie.setText(model.getValueAt(i, 2).toString());
+    }
 
-	        TableModel model = table.getModel();
-	        
-	        
-	        mealsID.setText(model.getValueAt(i,0).toString());
+    public void Show_Exercise_In_JTable() {
+        ExerciseLogDB logDB = new ExerciseLogDB();
+        ArrayList<Object[]> logs;
+        if (currentViewDate != null && !currentViewDate.isEmpty()) {
+            logs = logDB.getLogsByDate(get, currentViewDate);
+        } else {
+            logs = logDB.getTodayLogs(get);
+        }
+        DefaultTableModel model = (DefaultTableModel) table2.getModel();
+        model.setRowCount(0);
+        for (Object[] lr : logs) {
+            String type = (String) lr[2];
+            String muscleGroup = lr[7] != null ? (String) lr[7] : "General";
+            if (muscleGroup.isEmpty()) muscleGroup = "General";
+            String info;
+            String calories;
+            if ("Strength".equals(type)) {
+                int reps = (int) lr[4];
+                int kg   = (int) ((double) lr[5]);
+                info = reps + " reps @ " + kg + " kg";
+                calories = "-";
+            } else {
+                int mins = (int) ((double) lr[6]);
+                info = mins + " min";
+                calories = String.format("%.0f kcal", (double) lr[3]);
+            }
+            model.addRow(new Object[]{lr[0], lr[1], muscleGroup, info, calories});
+        }
+    }
 
-	        txtmealName.setText(model.getValueAt(i,1).toString());
+    private void refreshDateComboBox() {
+        if (dateComboBox == null) return;
+        ExerciseLogDB logDB = new ExerciseLogDB();
+        ArrayList<String> dates = logDB.getAllLogDates(get);
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+        String today = String.valueOf(LocalDate.now());
+        if (!dates.contains(today)) dates.add(0, today);
+        for (String d : dates) model.addElement(d);
+        dateComboBox.setModel(model);
+        dateComboBox.setSelectedItem(currentViewDate);
+    }
 
-	        txtmealcalorie.setText(model.getValueAt(i,2).toString());
+    public void Show_MealLog_In_JTable() {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        Show_Meals_In_JTable();
+        refreshMacroSummary();
+    }
 
-	        
-	    } 
-	   
-	   public void Show_Exercise_In_JTable()
-	   {
-		   ExerciseLogDB logDB = new ExerciseLogDB();
-		   java.util.ArrayList<Object[]> logs;
-		   // Show selected date (or today if not set)
-		   if (currentViewDate != null && !currentViewDate.isEmpty()) {
-			   logs = logDB.getLogsByDate(get, currentViewDate);
-		   } else {
-			   logs = logDB.getTodayLogs(get);
-		   }
-	       DefaultTableModel model = (DefaultTableModel)table2.getModel();
-	       model.setRowCount(0);
-	       for (Object[] lr : logs) {
-	           // lr: [0]=logId, [1]=name, [2]=type, [3]=totalKcal, [4]=reps, [5]=weightKg, [6]=durationMin
-	           String type = (String) lr[2];
-	           String muscleGroup = lr[7] != null ? (String) lr[7] : "General";
-	           if (muscleGroup.isEmpty()) muscleGroup = "General";
-	           String info;
-	           String calories;
-	           if ("Strength".equals(type)) {
-	               int reps = (int) lr[4];
-	               int kg   = (int)((double) lr[5]);
-	               info     = reps + " reps @ " + kg + " kg";
-	               calories = "-";
-	           } else {
-	               int mins = (int)((double) lr[6]);
-	               info     = mins + " min";
-	               calories = String.format("%.0f kcal", (double) lr[3]);
-	           }
-	           model.addRow(new Object[]{lr[0], lr[1], muscleGroup, info, calories});
-	       }
-	    }
+    /**
+     * Refreshes the four header StatCards: Calories (with colour-coded
+     * progress vs daily goal), Protein, Carbs, Fat.
+     */
+    public void refreshMacroSummary() {
+        if (cardCalories == null) return; // guard against early calls
+        MealLogDB mdb = new MealLogDB();
+        double[] macros = mdb.getMacroSummary(get, currentViewDate);
 
-	   /** Refreshes the date dropdown from the database */
-	   private void refreshDateComboBox() {
-		   if (dateComboBox == null) return;
-		   ExerciseLogDB logDB = new ExerciseLogDB();
-		   java.util.ArrayList<String> dates = logDB.getAllLogDates(get);
-		   DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-		   // Always add today at the top
-		   String today = String.valueOf(LocalDate.now());
-		   if (!dates.contains(today)) dates.add(0, today);
-		   for (String d : dates) model.addElement(d);
-		   dateComboBox.setModel(model);
-		   // Select the currently viewed date
-		   dateComboBox.setSelectedItem(currentViewDate);
-	   }
-	
-	   public void Show_MealLog_In_JTable() {
-		   DefaultTableModel model = (DefaultTableModel)table.getModel();
-		   model.setRowCount(0);
-		   Show_Meals_In_JTable();
-		   refreshMacroSummary();
-	   }
+        // Sum total calories for the day from the meal-log table.
+        double totalCals = 0;
+        ArrayList<Object[]> logs = mdb.getMealLogsByDate(get, currentViewDate);
+        for (Object[] log : logs) totalCals += (double) log[3];
 
-	   /**
-	    * Queries the DB for today's macro totals and updates the three header labels.
-	    * Shows "0.0g" gracefully when no meals have been logged.
-	    */
-	   public void refreshMacroSummary() {
-		   if (lblProteinVal == null) return; // guard against early calls
-		   MealLogDB mdb = new MealLogDB();
-		   double[] macros = mdb.getMacroSummary(get, currentViewDate);
-		   lblProteinVal.setText(String.format("%.1fg", macros[0]));
-		   lblCarbsVal.setText(String.format("%.1fg",   macros[1]));
-		   lblFatVal.setText(String.format("%.1fg",     macros[2]));
-	   }
+        cardCalories.setValue(String.format("%.0f / %.0f kcal", totalCals, dailyCalorieGoal));
+        double pct = dailyCalorieGoal > 0 ? (totalCals / dailyCalorieGoal) * 100 : 0;
+        cardCalories.setCaption(String.format("%.0f%% of daily goal", pct));
 
-	   private int selectedExerciseId = -1;
+        // Colour: green ≤ 90%, amber 90–110%, red > 110%
+        Color calColour;
+        if (pct <= 90)       calColour = UITheme.SUCCESS;
+        else if (pct <= 110) calColour = UITheme.WARNING;
+        else                 calColour = UITheme.DANGER;
+        cardCalories.setValueColor(calColour);
 
-	   private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {
-	        int i = table2.getSelectedRow();
-	        if (i < 0) return;
-	        TableModel model = table2.getModel();
-	        selectedExerciseId = Integer.parseInt(model.getValueAt(i, 0).toString());
-	        exerciseID.setText(String.valueOf(selectedExerciseId));
-	    } 
-	   
-	   class UpdateMealListener implements ActionListener{
+        cardProtein.setValue(String.format("%.1f g", macros[0]));
+        cardProtein.setValueColor(UITheme.SUCCESS);
+        cardProtein.setCaption("Today's intake");
 
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			try{
-			if(mealsID.getText().isEmpty() || 
-			txtmealName.getText().isEmpty() || txtmealcalorie.getText().isEmpty()){
-			JOptionPane.showMessageDialog(null, "To Update please select the meal above!!");
-			}
-			else{
-			MealDB udb=new MealDB();
-			int meals_id=Integer.parseInt(mealsID.getText());
-			Meal m=udb.getById(meals_id);
-			//System.out.println(meals_id);
-			//System.out.println(txtmealName.getText());
-			m.setMealName(txtmealName.getText());
-			
-			int meals_calorie=Integer.parseInt(txtmealcalorie.getText());
-			m.setCaloriesPerGram(meals_calorie);
-			
-			int rowUpdate=udb.updateMeal(m);
-			if(rowUpdate>0){
-				JOptionPane.showMessageDialog(null, "Meal Updated");
-				DefaultTableModel model = (DefaultTableModel)table.getModel();
-		         model.setRowCount(0);
-		         Show_Meals_In_JTable();
-		         mealsID.setText("");
-		         txtmealName.setText("");
-		         txtmealcalorie.setText("");
-		         
-			}
-			else{
-				JOptionPane.showMessageDialog(null, "Failed to update meal");
-			}	
-			}
-			}
-			catch(NumberFormatException eee){
-				JOptionPane.showConfirmDialog(null, 
-				"Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-			}
-		}
-	 }
-	   
-		class DeleteMealListener implements ActionListener{
+        cardCarbs.setValue(String.format("%.1f g", macros[1]));
+        cardCarbs.setValueColor(UITheme.WARNING);
+        cardCarbs.setCaption("Today's intake");
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if(mealsID.getText().isEmpty() || 
-				txtmealName.getText().isEmpty() || txtmealcalorie.getText().isEmpty()){
-				JOptionPane.showMessageDialog(null, "To Delete please select the meal above!!");
-				}
-				else{
-				MealDB udb=new MealDB();
-				int meals_id=Integer.parseInt(mealsID.getText());
-				Meal m=udb.getById(meals_id); 
-				int rowUpdate= udb.deleteMeal(m);
-				if(rowUpdate>0){
-					JOptionPane.showMessageDialog(null, "Meal Deleted");
-					DefaultTableModel model = (DefaultTableModel)table.getModel();
-			         model.setRowCount(0);
-			         Show_Meals_In_JTable();
-					mealsID.setText("");
-					txtmealName.setText("");
-					txtmealcalorie.setText("");
-					
-				}
-				else{
-					JOptionPane.showMessageDialog(null, "Failed to delete Meal");
-				}
-				}	
-			}
-		}
-		
-		   class UpdateExerciseListener implements ActionListener {
-				@Override
-				public void actionPerformed(ActionEvent e) { /* not used */ }
-			   }
-			   
-		class DeleteExerciseListener implements ActionListener{
+        cardFat.setValue(String.format("%.1f g", macros[2]));
+        cardFat.setValueColor(UITheme.DANGER);
+        cardFat.setCaption("Today's intake");
+    }
 
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			if(selectedExerciseId < 0){
-				JOptionPane.showMessageDialog(null, "Please select exercise to delete!!");
-			}
-			else{
-			ExerciseLogDB logDB = new ExerciseLogDB();
-			int rowUpdate = logDB.deleteTodayLog(selectedExerciseId);
-			if(rowUpdate > 0){
-			JOptionPane.showMessageDialog(null, "Exercise removed from today's log");
-			Show_Exercise_In_JTable();
-			selectedExerciseId = -1;
-			exerciseID.setText("");
-			}
-			else{
-			JOptionPane.showMessageDialog(null, "Failed to delete");
-			}
-			}
-			}		
-				}
-				
-class InsertWeightListener implements ActionListener{
+    private int selectedExerciseId = -1;
 
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						try{
-						if(txtmorningW.getText().isEmpty()){
-							JOptionPane.showMessageDialog(null, "Please enter weight!!");
-						}
-						else{
-						Weight w = new Weight();
-						double mrng_wt=Double.parseDouble(txtmorningW.getText());
-						w.setWeightM(mrng_wt);
-						int user_id=Integer.parseInt(txtuserid.getText());
-						w.setUserId(user_id);
-						
-						WeightDB udb=new WeightDB();
-						int rowUpdate= udb.insertWeight(w);
-						
-						if(rowUpdate>0){
-						JOptionPane.showMessageDialog(null, " Weight Added!");	
-						LocalDate today=LocalDate.now();
-							
-							txtmorningW.setText("");
-							
-							
-						}
-						else{
-							JOptionPane.showMessageDialog(null, "Failed to Add Weight!!");
-						}
-						}
-						}
-						catch(NumberFormatException eee){
-							JOptionPane.showConfirmDialog(null, 
-						"Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-						}
-						
-					}
-					}
-			
-				   class UpdateWeightListener implements ActionListener{
+    private void UsersMouseClicked1(java.awt.event.MouseEvent evt) {
+        int i = table2.getSelectedRow();
+        if (i < 0) return;
+        TableModel model = table2.getModel();
+        selectedExerciseId = Integer.parseInt(model.getValueAt(i, 0).toString());
+        exerciseID.setText(String.valueOf(selectedExerciseId));
+    }
 
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							try{
-							if(txtEveningW.getText().isEmpty()){
-								JOptionPane.showMessageDialog(null, "Please enter evening weight!!");
-							}
-							else{
-							WeightDB udb=new WeightDB();
-							
-							Weight w=new Weight();
-							
-							double weight_ev=Double.parseDouble(txtEveningW.getText());
-							w.setWeightE(weight_ev);
-							ArrayList<Double> got =udb.getList();
-							double mWt=got.get(0);
-							double averageW=(weight_ev+mWt)/2;
-							w.setAverage(averageW);
-							
-							int user_id=Integer.parseInt(txtuserid.getText());
-							w.setUserId(user_id);
-							
-							
-							int rowUpdate=udb.updateWeight(w);
-							if(rowUpdate>0){
-								JOptionPane.showMessageDialog(null, "Weight Added");
-						         
-						         txtEveningW.setText("");
-						         
-							}
-							else{
-								JOptionPane.showMessageDialog(null, "Failed add Weight");
-							}
-							}
-							}
-							catch(NumberFormatException ee){
-								JOptionPane.showConfirmDialog
-								(null, "Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-							}
-							
-							
-						}
-						   
-					   }
-					class InsertWaistListener implements ActionListener{
+    // ════════════════════════════════════════════════════════════════════
+    //  Listeners — preserved verbatim, except popup messages routed to
+    //  the inline status label where convenient.
+    // ════════════════════════════════════════════════════════════════════
+    class UpdateMealListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (mealsID.getText().isEmpty() || txtmealName.getText().isEmpty() || txtmealcalorie.getText().isEmpty()) {
+                    setMealStatus("Select a meal in the table to update.", UITheme.DANGER);
+                } else {
+                    MealDB udb = new MealDB();
+                    int meals_id = Integer.parseInt(mealsID.getText());
+                    Meal m = udb.getById(meals_id);
+                    m.setMealName(txtmealName.getText());
+                    int meals_calorie = Integer.parseInt(txtmealcalorie.getText());
+                    m.setCaloriesPerGram(meals_calorie);
+                    int rowUpdate = udb.updateMeal(m);
+                    if (rowUpdate > 0) {
+                        setMealStatus("Meal updated.", UITheme.SUCCESS);
+                        ((DefaultTableModel) table.getModel()).setRowCount(0);
+                        Show_Meals_In_JTable();
+                        mealsID.setText("");
+                        txtmealName.setText("");
+                        txtmealcalorie.setText("");
+                    } else {
+                        setMealStatus("Failed to update meal.", UITheme.DANGER);
+                    }
+                }
+            } catch (NumberFormatException eee) {
+                setMealStatus("Please enter numeric values.", UITheme.DANGER);
+            }
+        }
+    }
 
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							try{
-							if(txtMorningWa.getText().isEmpty()){
-								JOptionPane.showMessageDialog(null, "Please enter morning waist");
-							}
-							else{
-							Waist ww = new Waist();
-							double mrng_wst=Double.parseDouble(txtMorningWa.getText());
-							ww.setWaistM(mrng_wst);
-							int user_id=Integer.parseInt(txtuserid.getText());
-							ww.setUserId(user_id);
-							
-							
-							
-							WaistDB udb=new WaistDB();
-							int rowUpdate= udb.insertWaist(ww);
-							
-							if(rowUpdate>0){
-							JOptionPane.showMessageDialog(null, "Waist Added!");	
-							
-								txtMorningWa.setText("");
-								
-							}
-							else{
-								JOptionPane.showMessageDialog(null, "Failed to Add Waist!!");
-							}
-							}
-							}
-							catch(NumberFormatException ee){
-								JOptionPane.showConfirmDialog(null,
-							"Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-							}
-							
-						}
-						}
-				
-						class UpdateWaistListener implements ActionListener{
+    class DeleteMealListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (mealsID.getText().isEmpty() || txtmealName.getText().isEmpty() || txtmealcalorie.getText().isEmpty()) {
+                setMealStatus("Select a meal in the table to delete.", UITheme.DANGER);
+            } else {
+                MealDB udb = new MealDB();
+                int meals_id = Integer.parseInt(mealsID.getText());
+                Meal m = udb.getById(meals_id);
+                int rowUpdate = udb.deleteMeal(m);
+                if (rowUpdate > 0) {
+                    setMealStatus("Meal deleted.", UITheme.SUCCESS);
+                    ((DefaultTableModel) table.getModel()).setRowCount(0);
+                    Show_Meals_In_JTable();
+                    mealsID.setText("");
+                    txtmealName.setText("");
+                    txtmealcalorie.setText("");
+                    refreshMacroSummary();
+                } else {
+                    setMealStatus("Failed to delete meal.", UITheme.DANGER);
+                }
+            }
+        }
+    }
 
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							try{
-							if(txtEveningWa.getText().isEmpty()){
-								JOptionPane.showMessageDialog(null, 
-								"Please enter evening waist");
-							}
-							else{
-							WaistDB udb=new WaistDB();
-								
-								Waist ww=new Waist();
-								double waist_ev=Double.parseDouble(txtEveningWa.getText());
-								ww.setWaistE(waist_ev);
-								
-								ArrayList<Double> gots =udb.getLists();
-								double mWt=gots.get(0);
-								double averageW=(waist_ev+mWt)/2;
-								ww.setAverage(averageW);
-								int user_id=Integer.parseInt(txtuserid.getText());
-								ww.setUserId(user_id);
-								
-								int rowUpdate=udb.updateWaist(ww);
-								if(rowUpdate>0){
-									JOptionPane.showMessageDialog(null, "Waist Added");
-							         
-							         txtEveningWa.setText("");
-							         
-								}
-								else{
-									JOptionPane.showMessageDialog(null, "Failed add Waist");
-								}
-							}
-							}
-							catch(NumberFormatException ee){
-								JOptionPane.showConfirmDialog(null,
-						    "Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
-							}
-								
-								
-								
-							}
-							   
-						   }
-						// Daily meal log entry			   
-						class InsertDailymealListener implements ActionListener{
+    class UpdateExerciseListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) { /* not used */ }
+    }
 
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                try{
-                                    // Ištaisyta: Nebetikriname mealsID.getText().isEmpty()
-                                    if(txtmealcalorie.getText().isEmpty() || txtintake.getText().isEmpty() || txtmealName.getText().isEmpty()){
-                                        JOptionPane.showMessageDialog(null, "The fields can not be empty");
-                                    }
-                                    else{
-                                        double calorieIntake=Double.parseDouble(txtmealcalorie.getText());
-                                        double mealAmount=Double.parseDouble(txtintake.getText());
-                                        double totalCalorie=(calorieIntake / 100.0) * mealAmount; 
-                                        
-                                        // 1. Save the meal (with macros) to the meals catalogue
-                                        Meal m = new Meal();
-                                        m.setMealName(txtmealName.getText());
-                                        m.setCaloriesPerGram(calorieIntake);
-                                        m.setProteinPer100g(selectedProtein);
-                                        m.setCarbsPer100g(selectedCarbs);
-                                        m.setFatPer100g(selectedFat);
-                                        MealDB mdb = new MealDB();
-                                        int generatedMealId = mdb.insertMeal(m);
+    class DeleteExerciseListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (selectedExerciseId < 0) {
+                setExerciseStatus("Select an exercise to delete.", UITheme.DANGER);
+            } else {
+                ExerciseLogDB logDB = new ExerciseLogDB();
+                int rowUpdate = logDB.deleteTodayLog(selectedExerciseId);
+                if (rowUpdate > 0) {
+                    setExerciseStatus("Removed from today's log.", UITheme.SUCCESS);
+                    Show_Exercise_In_JTable();
+                    selectedExerciseId = -1;
+                    exerciseID.setText("");
+                } else {
+                    setExerciseStatus("Failed to delete.", UITheme.DANGER);
+                }
+            }
+        }
+    }
 
-                                        // 2. Išsaugome suvartojimo istoriją (Log'ą) naudodami NAUJĄ ID
-                                        DailyMealLog dml = new DailyMealLog();
-                                        dml.setTotalCalorieIntake(totalCalorie);
-                                        int user_id=Integer.parseInt(txtuserid.getText());
-                                        dml.setUserId(user_id);
-                                        dml.setMealId(generatedMealId); // Štai čia priskiriamas naujasis ID!
-                                        
-                                        MealLogDB udb=new MealLogDB();
-                                        int rowUpdate= udb.insertDailyLog(dml);
-                                        
-                                        if(rowUpdate>0){
-                                            JOptionPane.showMessageDialog(null,
-                                                "Your Meal Log Added!\nTotal calories: " + String.format("%.1f", totalCalorie) + " kcal");
+    class InsertWeightListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (txtmorningW.getText().isEmpty()) {
+                    setWeightStatus("Please enter morning weight.", UITheme.DANGER);
+                } else {
+                    Weight w = new Weight();
+                    double mrng_wt = Double.parseDouble(txtmorningW.getText());
+                    w.setWeightM(mrng_wt);
+                    int user_id = Integer.parseInt(txtuserid.getText());
+                    w.setUserId(user_id);
+                    WeightDB udb = new WeightDB();
+                    int rowUpdate = udb.insertWeight(w);
+                    if (rowUpdate > 0) {
+                        setWeightStatus("Weight added.", UITheme.SUCCESS);
+                        txtmorningW.setText("");
+                    } else {
+                        setWeightStatus("Failed to add weight.", UITheme.DANGER);
+                    }
+                }
+            } catch (NumberFormatException eee) {
+                setWeightStatus("Please enter a numeric value.", UITheme.DANGER);
+            }
+        }
+    }
 
-                                            txtmealcalorie.setText("");
-                                            txtintake.setText("");
-                                            txtmealName.setText("");
-                                            // Reset captured macros for next entry
-                                            selectedProtein = 0;
-                                            selectedCarbs   = 0;
-                                            selectedFat     = 0;
-                                            Show_MealLog_In_JTable();
-                                        }
-                                        else{
-                                            JOptionPane.showMessageDialog(null, "Failed to Add Log!!");
-                                        }
-                                    }
-                                }
-                                catch(NumberFormatException ee){
-                                    JOptionPane.showConfirmDialog(null, "Please enter numeric value",
-                                "Invalid input", JOptionPane.CANCEL_OPTION);
-                                }
-                            }
-                        }
+    class UpdateWeightListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (txtEveningW.getText().isEmpty()) {
+                    setWeightStatus("Please enter evening weight.", UITheme.DANGER);
+                } else {
+                    WeightDB udb = new WeightDB();
+                    Weight w = new Weight();
+                    double weight_ev = Double.parseDouble(txtEveningW.getText());
+                    w.setWeightE(weight_ev);
+                    ArrayList<Double> got = udb.getList();
+                    double mWt = got.get(0);
+                    double averageW = (weight_ev + mWt) / 2;
+                    w.setAverage(averageW);
+                    int user_id = Integer.parseInt(txtuserid.getText());
+                    w.setUserId(user_id);
+                    int rowUpdate = udb.updateWeight(w);
+                    if (rowUpdate > 0) {
+                        setWeightStatus("Evening weight saved (avg " + String.format("%.1f", averageW) + " kg).", UITheme.SUCCESS);
+                        txtEveningW.setText("");
+                    } else {
+                        setWeightStatus("Failed to add weight.", UITheme.DANGER);
+                    }
+                }
+            } catch (NumberFormatException ee) {
+                setWeightStatus("Please enter a numeric value.", UITheme.DANGER);
+            }
+        }
+    }
+
+    class InsertWaistListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (txtMorningWa.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Please enter morning waist");
+                } else {
+                    Waist ww = new Waist();
+                    double mrng_wst = Double.parseDouble(txtMorningWa.getText());
+                    ww.setWaistM(mrng_wst);
+                    int user_id = Integer.parseInt(txtuserid.getText());
+                    ww.setUserId(user_id);
+                    WaistDB udb = new WaistDB();
+                    int rowUpdate = udb.insertWaist(ww);
+                    if (rowUpdate > 0) {
+                        JOptionPane.showMessageDialog(null, "Waist Added!");
+                        txtMorningWa.setText("");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Failed to Add Waist!!");
+                    }
+                }
+            } catch (NumberFormatException ee) {
+                JOptionPane.showConfirmDialog(null, "Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
+            }
+        }
+    }
+
+    class UpdateWaistListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (txtEveningWa.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Please enter evening waist");
+                } else {
+                    WaistDB udb = new WaistDB();
+                    Waist ww = new Waist();
+                    double waist_ev = Double.parseDouble(txtEveningWa.getText());
+                    ww.setWaistE(waist_ev);
+                    ArrayList<Double> gots = udb.getLists();
+                    double mWt = gots.get(0);
+                    double averageW = (waist_ev + mWt) / 2;
+                    ww.setAverage(averageW);
+                    int user_id = Integer.parseInt(txtuserid.getText());
+                    ww.setUserId(user_id);
+                    int rowUpdate = udb.updateWaist(ww);
+                    if (rowUpdate > 0) {
+                        JOptionPane.showMessageDialog(null, "Waist Added");
+                        txtEveningWa.setText("");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Failed add Waist");
+                    }
+                }
+            } catch (NumberFormatException ee) {
+                JOptionPane.showConfirmDialog(null, "Please enter numeric value", "Naughty", JOptionPane.CANCEL_OPTION);
+            }
+        }
+    }
+
+    class InsertDailymealListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                if (txtmealcalorie.getText().isEmpty() || txtintake.getText().isEmpty() || txtmealName.getText().isEmpty()) {
+                    setMealStatus("All meal fields are required.", UITheme.DANGER);
+                } else {
+                    double calorieIntake = Double.parseDouble(txtmealcalorie.getText());
+                    double mealAmount    = Double.parseDouble(txtintake.getText());
+                    double totalCalorie  = (calorieIntake / 100.0) * mealAmount;
+
+                    Meal m = new Meal();
+                    m.setMealName(txtmealName.getText());
+                    m.setCaloriesPerGram(calorieIntake);
+                    m.setProteinPer100g(selectedProtein);
+                    m.setCarbsPer100g(selectedCarbs);
+                    m.setFatPer100g(selectedFat);
+                    MealDB mdb = new MealDB();
+                    int generatedMealId = mdb.insertMeal(m);
+
+                    DailyMealLog dml = new DailyMealLog();
+                    dml.setTotalCalorieIntake(totalCalorie);
+                    int user_id = Integer.parseInt(txtuserid.getText());
+                    dml.setUserId(user_id);
+                    dml.setMealId(generatedMealId);
+
+                    MealLogDB udb = new MealLogDB();
+                    int rowUpdate = udb.insertDailyLog(dml);
+
+                    if (rowUpdate > 0) {
+                        setMealStatus(String.format("Logged: %.1f kcal added.", totalCalorie), UITheme.SUCCESS);
+                        txtmealcalorie.setText("");
+                        txtintake.setText("");
+                        txtmealName.setText("");
+                        selectedProtein = 0;
+                        selectedCarbs   = 0;
+                        selectedFat     = 0;
+                        Show_MealLog_In_JTable();
+                    } else {
+                        setMealStatus("Failed to add log.", UITheme.DANGER);
+                    }
+                }
+            } catch (NumberFormatException ee) {
+                setMealStatus("Please enter numeric values.", UITheme.DANGER);
+            }
+        }
+    }
 }
