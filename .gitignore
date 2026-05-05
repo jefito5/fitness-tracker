@@ -1,4 +1,19 @@
+# Compiled output
+bin/
+out/
+*.class
+
+# SQLite database files
 fitness.db
 fitness.db-journal
 fitness.db-shm
 fitness.db-wal
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
