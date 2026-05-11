@@ -121,7 +121,7 @@ public class trackProgress {
     // ════════════════════════════════════════════════════════════════════
     private void initialize() {
         trackFrame = new JFrame("Daily Record");
-        trackFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        trackFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         trackFrame.setMinimumSize(new Dimension(1100, 720));
         trackFrame.setSize(1180, 780);
         trackFrame.setLocationRelativeTo(null);
