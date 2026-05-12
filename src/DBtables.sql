@@ -19,12 +19,16 @@ CREATE TABLE IF NOT EXISTS DailyExerciseLog (
     totalCalorieBurn INTEGER,
     exerciseID INTEGER,
     userId INTEGER,
-    Date TEXT
+    Date TEXT,
+    durationMinutes REAL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS meals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     MealName TEXT NOT NULL,
-    CaloriePerGram REAL
+    CaloriePerGram REAL,
+    protein_per_100g REAL DEFAULT 0,
+    carbs_per_100g REAL DEFAULT 0,
+    fat_per_100g REAL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS DailyMealLog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

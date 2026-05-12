@@ -108,6 +108,8 @@ public class BmiPanel {
 
         RoundedButton btnRefresh = new RoundedButton("Refresh");
         btnRefresh.setBounds(20, 335, 100, 35);
+        btnRefresh.setBackground(new java.awt.Color(26, 188, 125));
+        btnRefresh.setForeground(java.awt.Color.WHITE);
         frame.getContentPane().add(btnRefresh);
         btnRefresh.addActionListener(e -> refreshBmi());
 

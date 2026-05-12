@@ -58,6 +58,8 @@ public class TrendLine {
         // Atgal mygtukas
         RoundedButton btnBack = new RoundedButton("Back");
         btnBack.setBounds(20, 15, 80, 35);
+        btnBack.setBackground(new java.awt.Color(26, 188, 125));
+        btnBack.setForeground(java.awt.Color.WHITE);
         frmTrendLine.getContentPane().add(btnBack);
         btnBack.addActionListener(e -> {
             frmTrendLine.dispose(); 
@@ -107,7 +109,9 @@ public class TrendLine {
         frmTrendLine.add(comboBox_3); frmTrendLine.add(comboBox_4); frmTrendLine.add(comboBox_5);
 
         RoundedButton btnView = new RoundedButton("VIEW GRAPH");
-        btnView.setBounds(675, filterY, 160, 32);      
+        btnView.setBounds(675, filterY, 160, 32);
+        btnView.setBackground(new java.awt.Color(26, 188, 125));
+        btnView.setForeground(java.awt.Color.WHITE);     
         frmTrendLine.getContentPane().add(btnView);
 
         // Pagrindinis konteineris grafikui

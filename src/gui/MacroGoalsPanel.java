@@ -1,23 +1,37 @@
 package gui;
 
+import gui.components.CardPanel;
+import gui.components.RoundedButton;
+import gui.components.StyledTextField;
+import gui.components.UITheme;
 import impl.MacroGoalDB;
 import impl.MealLogDB;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import javax.swing.*;
 import models.MacroGoal;
 
 /**
- * FT-120: Nutrition Goals by Macronutrient Ratios
- * Shows macro ratio profiles, lets user create/edit/switch profiles,
- * and draws color-coded progress rings for today's intake vs targets.
+ * UI-9: Redesigned Macro Ratio Goals panel.
+ *
+ * Sectioned card layout with:
+ *  - Active profile name shown prominently in the header
+ *  - Daily calorie goal section
+ *  - Profile selector (set active / delete)
+ *  - Quick-preset buttons
+ *  - Create / Edit profile with three-column %% inputs and live sum validation
+ *  - Theme-coloured progress rings with bold percentage labels
+ *
+ * FT-120: Nutrition Goals by Macronutrient Ratios.
  */
 public class MacroGoalsPanel {
 
     private JFrame frame;
-    private int userId;
+    private final int userId;
     private double dailyCalorieGoal;
 
     // Profile management
@@ -25,21 +39,19 @@ public class MacroGoalsPanel {
     private ArrayList<MacroGoal> profiles;
     private MacroGoal activeProfile;
 
-    // Input fields
-    private JTextField txtProfileName;
-    private JTextField txtCarb;
-    private JTextField txtProtein;
-    private JTextField txtFat;
+    // Inputs
+    private StyledTextField txtProfileName;
+    private StyledTextField txtCarb;
+    private StyledTextField txtProtein;
+    private StyledTextField txtFat;
+    private StyledTextField txtCalGoal;
     private JLabel lblSum;
 
-    // Display labels
-    private JLabel lblActiveProfile;
-    private JLabel lblCalGoal;
+    // Header summary
+    private JLabel lblActiveProfileHeader;
 
     // Ring panel
     private RingPanel ringPanel;
-
-    // Toggle
     private boolean showPercent = false;
 
     public MacroGoalsPanel(int userId) {
@@ -50,82 +62,140 @@ public class MacroGoalsPanel {
         refreshRings();
     }
 
-    /** Reads calorie goal from DB (stored as a special profile named "__calorie_goal__"). */
+    /** Reads calorie goal from DB (stored as a special profile). */
     private void loadCalorieGoal() {
         MacroGoalDB db = new MacroGoalDB();
         dailyCalorieGoal = db.getCalorieGoal(userId);
-        if (dailyCalorieGoal <= 0) dailyCalorieGoal = 2000; // sensible default
+        if (dailyCalorieGoal <= 0) dailyCalorieGoal = 2000;
     }
 
     private void initialize() {
         frame = new JFrame("Macro Ratio Goals");
-        frame.setBounds(100, 100, 950, 720);
-        frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.getContentPane().setLayout(null);
+        frame.setMinimumSize(new Dimension(960, 720));
+        frame.setSize(1040, 780);
+        frame.setLocationRelativeTo(null);
 
-        // ── Title ─────────────────────────────────────────────────────────
-        JLabel lblTitle = new JLabel("Macronutrient Ratio Goals");
-        lblTitle.setFont(new Font("Verdana", Font.BOLD, 18));
-        lblTitle.setBounds(20, 10, 400, 30);
-        frame.getContentPane().add(lblTitle);
+        JPanel root = new JPanel(new BorderLayout(0, UITheme.SPACE_LG));
+        root.setBackground(UITheme.BACKGROUND);
+        root.setBorder(UITheme.padding(UITheme.SPACE_LG));
+        frame.setContentPane(root);
 
-        // ── Daily calorie goal input ───────────────────────────────────────
-        JLabel lblGoalLabel = new JLabel("Daily Calorie Goal (kcal):");
-        lblGoalLabel.setFont(new Font("Verdana", Font.PLAIN, 12));
-        lblGoalLabel.setBounds(20, 50, 180, 20);
-        frame.getContentPane().add(lblGoalLabel);
+        root.add(buildHeader(), BorderLayout.NORTH);
 
-        JTextField txtCalGoal = new JTextField(String.valueOf((int) dailyCalorieGoal));
-        txtCalGoal.setBounds(205, 48, 80, 22);
-        frame.getContentPane().add(txtCalGoal);
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setOpaque(false);
 
-        JButton btnSaveCalGoal = new JButton("Save");
-        btnSaveCalGoal.setBounds(295, 48, 60, 22);
-        frame.getContentPane().add(btnSaveCalGoal);
-        btnSaveCalGoal.addActionListener(e -> {
+        JPanel topRow = new JPanel(new GridLayout(1, 2, UITheme.SPACE_LG, 0));
+        topRow.setOpaque(false);
+        topRow.add(buildCalorieGoalCard());
+        topRow.add(buildProfileSelectorCard());
+        body.add(topRow);
+
+        body.add(Box.createVerticalStrut(UITheme.SPACE_LG));
+        body.add(buildPresetCard());
+
+        body.add(Box.createVerticalStrut(UITheme.SPACE_LG));
+        body.add(buildCreateEditCard());
+
+        body.add(Box.createVerticalStrut(UITheme.SPACE_LG));
+        body.add(buildRingsCard());
+
+        JScrollPane scroll = new JScrollPane(body);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        root.add(scroll, BorderLayout.CENTER);
+
+        frame.setVisible(true);
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  HEADER — title + active profile + calorie goal summary
+    // ════════════════════════════════════════════════════════════════════
+    private JComponent buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+
+        JPanel titleBlock = new JPanel();
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.setOpaque(false);
+
+        JLabel title = new JLabel("Macro Ratio Goals");
+        title.setFont(UITheme.FONT_TITLE);
+        title.setForeground(UITheme.TEXT_PRIMARY);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        lblActiveProfileHeader = new JLabel("No active profile");
+        lblActiveProfileHeader.setFont(UITheme.FONT_BODY_BOLD);
+        lblActiveProfileHeader.setForeground(UITheme.PRIMARY);
+        lblActiveProfileHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblActiveProfileHeader.setBorder(UITheme.padding(2, 0, 0, 0));
+
+        titleBlock.add(title);
+        titleBlock.add(lblActiveProfileHeader);
+        header.add(titleBlock, BorderLayout.WEST);
+        return header;
+    }
+
+    // ── CARD: Daily calorie goal ────────────────────────────────────────
+    private JComponent buildCalorieGoalCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Daily calorie goal", "Used to translate ratios into target grams"));
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        txtCalGoal = new StyledTextField("kcal");
+        txtCalGoal.setText(String.valueOf((int) dailyCalorieGoal));
+        txtCalGoal.setPreferredSize(new Dimension(120, 32));
+
+        RoundedButton btnSave = new RoundedButton("Save", RoundedButton.Variant.PRIMARY);
+        btnSave.setBorder(UITheme.padding(7, 16));
+        btnSave.addActionListener(e -> {
             try {
                 dailyCalorieGoal = Double.parseDouble(txtCalGoal.getText().trim());
                 MacroGoalDB db = new MacroGoalDB();
                 db.saveCalorieGoal(userId, dailyCalorieGoal);
-                lblCalGoal.setText("Goal: " + (int) dailyCalorieGoal + " kcal");
                 refreshRings();
-                JOptionPane.showMessageDialog(frame, "Calorie goal saved!");
+                updateActiveHeader();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(frame, "Enter a valid number.");
             }
         });
 
-        lblCalGoal = new JLabel("Goal: " + (int) dailyCalorieGoal + " kcal");
-        lblCalGoal.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblCalGoal.setForeground(Color.DARK_GRAY);
-        lblCalGoal.setBounds(365, 50, 150, 20);
-        frame.getContentPane().add(lblCalGoal);
+        row.add(txtCalGoal);
+        row.add(btnSave);
+        card.add(row);
+        return card;
+    }
 
-        // ── Profile selector ──────────────────────────────────────────────
-        JLabel lblSelectProfile = new JLabel("Active Profile:");
-        lblSelectProfile.setFont(new Font("Verdana", Font.BOLD, 12));
-        lblSelectProfile.setBounds(20, 82, 110, 20);
-        frame.getContentPane().add(lblSelectProfile);
+    // ── CARD: Profile selector ──────────────────────────────────────────
+    private JComponent buildProfileSelectorCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Profiles", "Switch between or remove saved ratio profiles"));
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         profileCombo = new JComboBox<>();
-        profileCombo.setBounds(135, 80, 200, 24);
-        frame.getContentPane().add(profileCombo);
+        profileCombo.setFont(UITheme.FONT_BODY);
+        profileCombo.setPreferredSize(new Dimension(220, 32));
+        row.add(profileCombo);
 
-        JButton btnActivate = new JButton("Set Active");
-        btnActivate.setBounds(345, 80, 100, 24);
-        frame.getContentPane().add(btnActivate);
-
-        JButton btnDelete = new JButton("Delete");
-        btnDelete.setBounds(455, 80, 80, 24);
-        frame.getContentPane().add(btnDelete);
-
-        lblActiveProfile = new JLabel("No active profile");
-        lblActiveProfile.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblActiveProfile.setForeground(new Color(0, 100, 0));
-        lblActiveProfile.setBounds(20, 108, 350, 18);
-        frame.getContentPane().add(lblActiveProfile);
-
+        RoundedButton btnActivate = new RoundedButton("Set Active", RoundedButton.Variant.PRIMARY);
+        btnActivate.setBorder(UITheme.padding(7, 16));
         btnActivate.addActionListener(e -> {
             int idx = profileCombo.getSelectedIndex();
             if (idx >= 0 && idx < profiles.size()) {
@@ -134,10 +204,11 @@ public class MacroGoalsPanel {
                 db.setActive(userId, selected.getId());
                 loadProfiles();
                 refreshRings();
-                JOptionPane.showMessageDialog(frame, "Profile \"" + selected.getProfileName() + "\" is now active!");
             }
         });
 
+        RoundedButton btnDelete = new RoundedButton("Delete", RoundedButton.Variant.SECONDARY);
+        btnDelete.setBorder(UITheme.padding(7, 16));
         btnDelete.addActionListener(e -> {
             int idx = profileCombo.getSelectedIndex();
             if (idx >= 0 && idx < profiles.size()) {
@@ -152,110 +223,197 @@ public class MacroGoalsPanel {
             }
         });
 
-        // ── Preset templates ───────────────────────────────────────────────
-        JLabel lblPresets = new JLabel("Quick presets:");
-        lblPresets.setFont(new Font("Verdana", Font.BOLD, 12));
-        lblPresets.setBounds(20, 135, 110, 20);
-        frame.getContentPane().add(lblPresets);
+        row.add(btnActivate);
+        row.add(btnDelete);
+        card.add(row);
+        return card;
+    }
+
+    // ── CARD: Quick presets ─────────────────────────────────────────────
+    private JComponent buildPresetCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Quick presets", "Tap to fill the form below"));
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
+
+        JPanel grid = new JPanel(new GridLayout(2, 3, UITheme.SPACE_SM, UITheme.SPACE_SM));
+        grid.setOpaque(false);
+        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         String[][] presets = {
-            {"Balanced (50/25/25)",    "50","25","25"},
-            {"Keto (5/30/65)",         "5","30","65"},
-            {"High-Carb (60/20/20)",   "60","20","20"},
-            {"High-Protein (30/45/25)","30","45","25"},
-            {"Cutting (40/40/20)",     "40","40","20"},
-            {"Bulking (55/25/20)",     "55","25","20"},
+                {"Balanced (50/25/25)",     "50", "25", "25"},
+                {"Keto (5/30/65)",          "5",  "30", "65"},
+                {"High-Carb (60/20/20)",    "60", "20", "20"},
+                {"High-Protein (30/45/25)", "30", "45", "25"},
+                {"Cutting (40/40/20)",      "40", "40", "20"},
+                {"Bulking (55/25/20)",      "55", "25", "20"},
         };
 
-        int px = 20;
         for (String[] p : presets) {
-            JButton btn = new JButton(p[0]);
-            btn.setFont(new Font("Tahoma", Font.PLAIN, 10));
-            btn.setBounds(px, 158, 160, 22);
-            frame.getContentPane().add(btn);
+            RoundedButton btn = new RoundedButton(p[0], RoundedButton.Variant.OUTLINE);
+            btn.setBorder(UITheme.padding(8, 12));
             final String name = p[0].split(" ")[0];
-            final double c = Double.parseDouble(p[1]);
+            final double c  = Double.parseDouble(p[1]);
             final double pr = Double.parseDouble(p[2]);
-            final double f = Double.parseDouble(p[3]);
+            final double f  = Double.parseDouble(p[3]);
             btn.addActionListener(e -> {
                 txtProfileName.setText(name);
-                txtCarb.setText(String.valueOf((int)c));
-                txtProtein.setText(String.valueOf((int)pr));
-                txtFat.setText(String.valueOf((int)f));
+                txtCarb.setText(String.valueOf((int) c));
+                txtProtein.setText(String.valueOf((int) pr));
+                txtFat.setText(String.valueOf((int) f));
                 updateSum();
             });
-            px += 165;
-            if (px > 640) px = 20; // wrap if needed
+            grid.add(btn);
         }
 
-        // ── Custom profile creation ────────────────────────────────────────
-        JLabel lblCreate = new JLabel("Create / Edit Profile:");
-        lblCreate.setFont(new Font("Verdana", Font.BOLD, 12));
-        lblCreate.setBounds(20, 192, 200, 20);
-        frame.getContentPane().add(lblCreate);
+        card.add(grid);
+        return card;
+    }
 
-        JLabel lblN = new JLabel("Name:");
-        lblN.setBounds(20, 218, 50, 20);
-        frame.getContentPane().add(lblN);
-        txtProfileName = new JTextField();
-        txtProfileName.setBounds(75, 216, 140, 22);
-        frame.getContentPane().add(txtProfileName);
+    // ── CARD: Create / edit profile (3-column percentages + live sum) ───
+    private JComponent buildCreateEditCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
 
-        JLabel lblC = new JLabel("Carbs %:");
-        lblC.setBounds(225, 218, 65, 20);
-        frame.getContentPane().add(lblC);
-        txtCarb = new JTextField("50");
-        txtCarb.setBounds(292, 216, 50, 22);
-        frame.getContentPane().add(txtCarb);
+        card.add(sectionHeader("Create / edit profile", "Carb + Protein + Fat must total 100%"));
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
 
-        JLabel lblP = new JLabel("Protein %:");
-        lblP.setBounds(355, 218, 72, 20);
-        frame.getContentPane().add(lblP);
-        txtProtein = new JTextField("25");
-        txtProtein.setBounds(430, 216, 50, 22);
-        frame.getContentPane().add(txtProtein);
+        JPanel nameRow = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        nameRow.setOpaque(false);
+        nameRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        nameRow.add(fieldLabel("Profile name"));
+        txtProfileName = new StyledTextField("e.g. My Cut");
+        txtProfileName.setPreferredSize(new Dimension(240, 32));
+        nameRow.add(txtProfileName);
+        card.add(nameRow);
 
-        JLabel lblF = new JLabel("Fat %:");
-        lblF.setBounds(492, 218, 45, 20);
-        frame.getContentPane().add(lblF);
-        txtFat = new JTextField("25");
-        txtFat.setBounds(538, 216, 50, 22);
-        frame.getContentPane().add(txtFat);
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
 
-        lblSum = new JLabel("Sum: 100%");
-        lblSum.setFont(new Font("Verdana", Font.ITALIC, 11));
-        lblSum.setForeground(new Color(0, 128, 0));
-        lblSum.setBounds(600, 218, 100, 22);
-        frame.getContentPane().add(lblSum);
+        // Three-column percentage row
+        JPanel pctRow = new JPanel(new GridLayout(1, 3, UITheme.SPACE_LG, 0));
+        pctRow.setOpaque(false);
+        pctRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Update sum live
-        KeyAdapter ka = new KeyAdapter() {
-            public void keyReleased(KeyEvent e) { updateSum(); }
+        txtCarb    = new StyledTextField("%");
+        txtProtein = new StyledTextField("%");
+        txtFat     = new StyledTextField("%");
+        txtCarb.setText("50");
+        txtProtein.setText("25");
+        txtFat.setText("25");
+
+        pctRow.add(percentColumn("Carbs %",   RingPanel.MACRO_CARBS,   txtCarb));
+        pctRow.add(percentColumn("Protein %", RingPanel.MACRO_PROTEIN, txtProtein));
+        pctRow.add(percentColumn("Fat %",     RingPanel.MACRO_FAT,     txtFat));
+        card.add(pctRow);
+
+        card.add(Box.createVerticalStrut(UITheme.SPACE_SM));
+
+        lblSum = new JLabel("Sum: 100% ✓");
+        lblSum.setFont(UITheme.FONT_BODY_BOLD);
+        lblSum.setForeground(UITheme.SUCCESS);
+        lblSum.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(lblSum);
+
+        // Live sum updates via DocumentListener (works for typing + paste)
+        DocumentListener dl = new DocumentListener() {
+            public void insertUpdate (DocumentEvent e) { updateSum(); }
+            public void removeUpdate (DocumentEvent e) { updateSum(); }
+            public void changedUpdate(DocumentEvent e) { updateSum(); }
         };
-        txtCarb.addKeyListener(ka);
-        txtProtein.addKeyListener(ka);
-        txtFat.addKeyListener(ka);
+        txtCarb.getDocument().addDocumentListener(dl);
+        txtProtein.getDocument().addDocumentListener(dl);
+        txtFat.getDocument().addDocumentListener(dl);
 
-        JButton btnSaveProfile = new JButton("Save Profile");
-        btnSaveProfile.setBounds(20, 248, 130, 26);
-        frame.getContentPane().add(btnSaveProfile);
-        btnSaveProfile.addActionListener(e -> saveProfile());
+        card.add(Box.createVerticalStrut(UITheme.SPACE_MD));
 
-        // ── Toggle view button ─────────────────────────────────────────────
-        JButton btnToggle = new JButton("Toggle g / %");
-        btnToggle.setBounds(165, 248, 130, 26);
-        frame.getContentPane().add(btnToggle);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACE_SM, 0));
+        actions.setOpaque(false);
+        actions.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        RoundedButton btnSave = new RoundedButton("Save Profile", RoundedButton.Variant.PRIMARY);
+        btnSave.addActionListener(e -> saveProfile());
+        actions.add(btnSave);
+
+        RoundedButton btnToggle = new RoundedButton("Toggle g / %", RoundedButton.Variant.OUTLINE);
         btnToggle.addActionListener(e -> {
             showPercent = !showPercent;
             refreshRings();
         });
+        actions.add(btnToggle);
 
-        // ── Ring panel ─────────────────────────────────────────────────────
+        card.add(actions);
+        return card;
+    }
+
+    private JComponent percentColumn(String label, Color accent, StyledTextField field) {
+        JPanel col = new JPanel();
+        col.setLayout(new BoxLayout(col, BoxLayout.Y_AXIS));
+        col.setOpaque(false);
+
+        JLabel l = new JLabel(label);
+        l.setFont(UITheme.FONT_SUBHEADING);
+        l.setForeground(accent);
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+
+        col.add(l);
+        col.add(Box.createVerticalStrut(UITheme.SPACE_XS));
+        col.add(field);
+        return col;
+    }
+
+    // ── CARD: Rings ─────────────────────────────────────────────────────
+    private JComponent buildRingsCard() {
+        CardPanel card = new CardPanel(true);
+        card.setLayout(new BorderLayout(0, UITheme.SPACE_MD));
+        card.setBorder(UITheme.padding(UITheme.SPACE_LG));
+
+        card.add(sectionHeader("Today's progress", "Coloured rings show consumed vs target per macro"), BorderLayout.NORTH);
+
         ringPanel = new RingPanel();
-        ringPanel.setBounds(20, 285, 900, 400);
-        frame.getContentPane().add(ringPanel);
+        ringPanel.setPreferredSize(new Dimension(900, 360));
+        ringPanel.setOpaque(false);
+        card.add(ringPanel, BorderLayout.CENTER);
 
-        frame.setVisible(true);
+        return card;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Helpers
+    // ════════════════════════════════════════════════════════════════════
+    private JComponent sectionHeader(String title, String subtitle) {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setOpaque(false);
+        p.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel t = new JLabel(title);
+        t.setFont(UITheme.FONT_HEADING);
+        t.setForeground(UITheme.TEXT_PRIMARY);
+        t.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel s = new JLabel(subtitle);
+        s.setFont(UITheme.FONT_CAPTION);
+        s.setForeground(UITheme.TEXT_MUTED);
+        s.setAlignmentX(Component.LEFT_ALIGNMENT);
+        s.setBorder(UITheme.padding(2, 0, 0, 0));
+
+        p.add(t);
+        p.add(s);
+        return p;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(UITheme.FONT_SUBHEADING);
+        l.setForeground(UITheme.TEXT_SECONDARY);
+        l.setPreferredSize(new Dimension(120, 32));
+        return l;
     }
 
     private void updateSum() {
@@ -264,11 +422,12 @@ public class MacroGoalsPanel {
             double p = Double.parseDouble(txtProtein.getText().trim());
             double f = Double.parseDouble(txtFat.getText().trim());
             double sum = c + p + f;
-            lblSum.setText(String.format("Sum: %.0f%%", sum));
-            lblSum.setForeground(Math.abs(sum - 100) < 0.01 ? new Color(0, 128, 0) : Color.RED);
+            boolean valid = Math.abs(sum - 100) < 0.01;
+            lblSum.setText(String.format("Sum: %.0f%% %s", sum, valid ? "✓" : ""));
+            lblSum.setForeground(valid ? UITheme.SUCCESS : UITheme.DANGER);
         } catch (NumberFormatException ex) {
             lblSum.setText("Sum: ?");
-            lblSum.setForeground(Color.RED);
+            lblSum.setForeground(UITheme.DANGER);
         }
     }
 
@@ -279,17 +438,16 @@ public class MacroGoalsPanel {
             return;
         }
         try {
-            double c  = Double.parseDouble(txtCarb.getText().trim());
-            double p  = Double.parseDouble(txtProtein.getText().trim());
-            double f  = Double.parseDouble(txtFat.getText().trim());
+            double c = Double.parseDouble(txtCarb.getText().trim());
+            double p = Double.parseDouble(txtProtein.getText().trim());
+            double f = Double.parseDouble(txtFat.getText().trim());
             if (Math.abs(c + p + f - 100) > 0.5) {
-                JOptionPane.showMessageDialog(frame, "Percentages must sum to 100%!\nCurrent sum: " + (c+p+f));
+                JOptionPane.showMessageDialog(frame, "Percentages must sum to 100%!\nCurrent sum: " + (c + p + f));
                 return;
             }
             MacroGoal g = new MacroGoal(userId, name, c, p, f);
             MacroGoalDB db = new MacroGoalDB();
             db.insert(g);
-            JOptionPane.showMessageDialog(frame, "Profile \"" + name + "\" saved!");
             txtProfileName.setText("");
             loadProfiles();
             refreshRings();
@@ -307,14 +465,22 @@ public class MacroGoalsPanel {
             profileCombo.addItem(g.getProfileName() + (g.isActive() ? " ✓" : ""));
             if (g.isActive()) activeProfile = g;
         }
+        updateActiveHeader();
+    }
+
+    private void updateActiveHeader() {
         if (activeProfile != null) {
-            lblActiveProfile.setText("Active: " + activeProfile.getProfileName() +
-                    String.format("  (Carbs %.0f%% / Protein %.0f%% / Fat %.0f%%)",
-                            activeProfile.getCarbPercent(),
-                            activeProfile.getProteinPercent(),
-                            activeProfile.getFatPercent()));
+            lblActiveProfileHeader.setText(String.format(
+                    "Active: %s  •  %.0f / %.0f / %.0f  •  Daily goal: %d kcal",
+                    activeProfile.getProfileName(),
+                    activeProfile.getCarbPercent(),
+                    activeProfile.getProteinPercent(),
+                    activeProfile.getFatPercent(),
+                    (int) dailyCalorieGoal));
+            lblActiveProfileHeader.setForeground(UITheme.PRIMARY);
         } else {
-            lblActiveProfile.setText("No active profile — create one below or pick a preset.");
+            lblActiveProfileHeader.setText("No active profile — pick a preset or create one below.");
+            lblActiveProfileHeader.setForeground(UITheme.TEXT_MUTED);
         }
     }
 
@@ -323,10 +489,18 @@ public class MacroGoalsPanel {
         double[] consumed = mdb.getMacroSummary(userId, String.valueOf(LocalDate.now()));
         ringPanel.update(activeProfile, consumed, dailyCalorieGoal, showPercent);
         ringPanel.repaint();
+        updateActiveHeader();
     }
 
-    // ─── Inner class: ring drawing ─────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════
+    //  RING PANEL — themed redesign
+    // ════════════════════════════════════════════════════════════════════
     static class RingPanel extends JPanel {
+
+        // Macro accent colours — pulled from UITheme for palette coherence.
+        static final Color MACRO_CARBS   = UITheme.INFO;     // blue
+        static final Color MACRO_PROTEIN = UITheme.SUCCESS;  // green
+        static final Color MACRO_FAT     = UITheme.WARNING;  // amber
 
         private MacroGoal profile;
         private double[] consumed = {0, 0, 0};
@@ -345,94 +519,110 @@ public class MacroGoalsPanel {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
             if (profile == null) {
-                g2.setFont(new Font("Verdana", Font.ITALIC, 14));
-                g2.setColor(Color.GRAY);
-                g2.drawString("Set an active profile to see progress rings.", 60, getHeight() / 2);
+                g2.setFont(UITheme.FONT_BODY);
+                g2.setColor(UITheme.TEXT_MUTED);
+                String msg = "Set an active profile to see progress rings.";
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(msg, (getWidth() - fm.stringWidth(msg)) / 2, getHeight() / 2);
                 return;
             }
 
-            String[] labels   = {"Carbs", "Protein", "Fat"};
-            Color[]  colors   = {new Color(52, 152, 219), new Color(46, 204, 113), new Color(231, 76, 60)};
-            double[] targets  = {
-                profile.getCarbGrams(dailyCal),
-                profile.getProteinGrams(dailyCal),
-                profile.getFatGrams(dailyCal)
+            String[] labels  = {"Carbs", "Protein", "Fat"};
+            Color[]  accents = {MACRO_CARBS, MACRO_PROTEIN, MACRO_FAT};
+            double[] targets = {
+                    profile.getCarbGrams(dailyCal),
+                    profile.getProteinGrams(dailyCal),
+                    profile.getFatGrams(dailyCal)
             };
 
-            int ringSize = 150;
-            int stroke   = 18;
-            int startX   = 30;
-            int centerY  = getHeight() / 2 - 20;
+            int ringSize = 160;
+            int stroke   = 20;
+            int gap      = 60;
+            int totalW   = 3 * ringSize + 2 * gap;
+            int startX   = Math.max(20, (getWidth() - totalW - 240) / 2); // leave room for legend on right
+            int centerY  = Math.max(ringSize / 2 + 30, getHeight() / 2 - 20);
 
             for (int i = 0; i < 3; i++) {
-                int cx = startX + i * (ringSize + 50) + ringSize / 2;
+                int cx = startX + i * (ringSize + gap) + ringSize / 2;
                 int cy = centerY;
 
                 double ratio = targets[i] > 0 ? Math.min(consumed[i] / targets[i], 1.0) : 0;
                 int arc = (int) Math.round(ratio * 360);
 
-                // Determine ring color based on progress
-                Color ringColor;
-                if (ratio >= 0.9)       ringColor = new Color(39, 174, 96);   // green
-                else if (ratio >= 0.7)  ringColor = new Color(243, 156, 18);  // yellow
-                else                    ringColor = new Color(231, 76, 60);    // red
-
                 // Background ring
-                g2.setStroke(new BasicStroke(stroke, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-                g2.setColor(new Color(220, 220, 220));
+                g2.setStroke(new BasicStroke(stroke, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+                g2.setColor(UITheme.BORDER);
                 g2.drawOval(cx - ringSize / 2, cy - ringSize / 2, ringSize, ringSize);
 
-                // Progress arc
+                // Progress arc — thresholded against the macro accent
+                Color ringColor;
+                if (ratio >= 0.9)      ringColor = UITheme.SUCCESS;
+                else if (ratio >= 0.7) ringColor = UITheme.WARNING;
+                else                   ringColor = accents[i];
+                g2.setStroke(new BasicStroke(stroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 g2.setColor(ringColor);
                 g2.drawArc(cx - ringSize / 2, cy - ringSize / 2, ringSize, ringSize, 90, -arc);
 
-                // Centre text
-                g2.setFont(new Font("Verdana", Font.BOLD, 13));
-                g2.setColor(Color.DARK_GRAY);
-                String centreText;
-                if (showPercent) {
-                    centreText = String.format("%.0f%%", ratio * 100);
-                } else {
-                    centreText = String.format("%.0fg", consumed[i]);
-                }
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(centreText, cx - fm.stringWidth(centreText) / 2, cy + 5);
+                // Centre value — big &amp; bold (acceptance criterion: bold percentage labels)
+                String centreText = showPercent
+                        ? String.format("%.0f%%", ratio * 100)
+                        : String.format("%.0fg", consumed[i]);
+                g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 24));
+                g2.setColor(UITheme.TEXT_PRIMARY);
+                FontMetrics fmBig = g2.getFontMetrics();
+                g2.drawString(centreText, cx - fmBig.stringWidth(centreText) / 2, cy + 8);
 
-                // Label below ring
-                g2.setFont(new Font("Verdana", Font.BOLD, 12));
-                g2.setColor(colors[i]);
-                g2.drawString(labels[i], cx - fm.stringWidth(labels[i]) / 2, cy + ringSize / 2 + 22);
+                // Sub-label inside ring (always shows the alternate format)
+                String sub = showPercent
+                        ? String.format("%.0fg", consumed[i])
+                        : String.format("%.0f%%", ratio * 100);
+                g2.setFont(UITheme.FONT_CAPTION);
+                g2.setColor(UITheme.TEXT_MUTED);
+                FontMetrics fmSub = g2.getFontMetrics();
+                g2.drawString(sub, cx - fmSub.stringWidth(sub) / 2, cy + 26);
 
-                // Target line
-                g2.setFont(new Font("Verdana", Font.PLAIN, 11));
-                g2.setColor(Color.GRAY);
+                // Macro label below ring
+                g2.setFont(UITheme.FONT_HEADING);
+                g2.setColor(accents[i]);
+                FontMetrics fmLbl = g2.getFontMetrics();
+                g2.drawString(labels[i], cx - fmLbl.stringWidth(labels[i]) / 2, cy + ringSize / 2 + 26);
+
+                // Target / remaining caption
+                g2.setFont(UITheme.FONT_CAPTION);
+                g2.setColor(UITheme.TEXT_SECONDARY);
                 String targetStr = showPercent
-                        ? String.format("target: %.0f%%", profile == null ? 0 :
+                        ? String.format("target %.0f%%",
                             i == 0 ? profile.getCarbPercent() :
                             i == 1 ? profile.getProteinPercent() : profile.getFatPercent())
-                        : String.format("target: %.0fg", targets[i]);
-                g2.drawString(targetStr, cx - fm.stringWidth(targetStr) / 2, cy + ringSize / 2 + 38);
+                        : String.format("target %.0fg", targets[i]);
+                FontMetrics fmCap = g2.getFontMetrics();
+                g2.drawString(targetStr, cx - fmCap.stringWidth(targetStr) / 2, cy + ringSize / 2 + 44);
 
-                // Remaining
                 double remaining = targets[i] - consumed[i];
                 String remStr = remaining > 0
                         ? String.format("%.0fg left", remaining)
-                        : String.format("+%.0fg over", -remaining);
-                g2.setColor(remaining > 0 ? Color.DARK_GRAY : new Color(231, 76, 60));
-                g2.drawString(remStr, cx - fm.stringWidth(remStr) / 2, cy + ringSize / 2 + 53);
+                        : String.format("%.0fg over", -remaining);
+                g2.setColor(remaining > 0 ? UITheme.TEXT_SECONDARY : UITheme.DANGER);
+                g2.drawString(remStr, cx - fmCap.stringWidth(remStr) / 2, cy + ringSize / 2 + 60);
             }
 
-            // Pie chart (simple) on the right
-            drawPieChart(g2, profile, startX + 3 * (ringSize + 50) + 30, centerY - 60);
+            // Pie chart legend on the right
+            drawPieChart(g2, profile, startX + totalW + 30, centerY - ringSize / 2 + 10);
         }
 
         private void drawPieChart(Graphics2D g2, MacroGoal p, int x, int y) {
             int size = 130;
-            Color[] pc = {new Color(52, 152, 219), new Color(46, 204, 113), new Color(231, 76, 60)};
+            Color[] pc = {MACRO_CARBS, MACRO_PROTEIN, MACRO_FAT};
             double[] pcts = {p.getCarbPercent(), p.getProteinPercent(), p.getFatPercent()};
             String[] names = {"Carbs", "Protein", "Fat"};
+
+            // Title
+            g2.setFont(UITheme.FONT_SUBHEADING);
+            g2.setColor(UITheme.TEXT_SECONDARY);
+            g2.drawString("Target split", x, y - 6);
 
             int start = 0;
             for (int i = 0; i < 3; i++) {
@@ -442,18 +632,20 @@ public class MacroGoalsPanel {
                 start += arc;
             }
 
-            // Legend
-            g2.setFont(new Font("Verdana", Font.PLAIN, 11));
-            for (int i = 0; i < 3; i++) {
-                g2.setColor(pc[i]);
-                g2.fillRect(x, y + size + 10 + i * 18, 12, 12);
-                g2.setColor(Color.DARK_GRAY);
-                g2.drawString(String.format("%s: %.0f%%", names[i], pcts[i]), x + 18, y + size + 21 + i * 18);
-            }
+            // Donut hole for a cleaner look
+            g2.setColor(UITheme.SURFACE);
+            int hole = size / 2;
+            g2.fillOval(x + (size - hole) / 2, y + (size - hole) / 2, hole, hole);
 
-            g2.setFont(new Font("Verdana", Font.BOLD, 11));
-            g2.setColor(Color.DARK_GRAY);
-            g2.drawString("Macro Split", x + 15, y - 5);
+            // Legend
+            g2.setFont(UITheme.FONT_CAPTION);
+            for (int i = 0; i < 3; i++) {
+                int ly = y + size + 14 + i * 20;
+                g2.setColor(pc[i]);
+                g2.fillRoundRect(x, ly - 10, 14, 14, 4, 4);
+                g2.setColor(UITheme.TEXT_PRIMARY);
+                g2.drawString(String.format("%s — %.0f%%", names[i], pcts[i]), x + 22, ly + 1);
+            }
         }
     }
 }
