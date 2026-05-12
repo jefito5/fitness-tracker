@@ -6,9 +6,9 @@ import java.awt.Font;
 public class UITheme {
     
     // --- 1. COLOUR PALETTE (Documented) ---
-    public static final Color PRIMARY = new Color(41, 128, 185);     // Pagrindinė mėlyna (Mygtukams, akcentams)
-    public static final Color ON_PRIMARY = Color.WHITE;              // Tekstas ant pagrindinės spalvos
-    public static final Color SURFACE = Color.WHITE;                 // Kortelių, panelių fonas
+    public static final Color PRIMARY = new Color(41, 128, 185);    // Pagrindinė mėlyna (Mygtukams, akcentams)
+    public static final Color ON_PRIMARY = Color.WHITE;                     // Tekstas ant pagrindinės spalvos
+    public static final Color SURFACE = Color.WHITE;                        // Kortelių, panelių fonas
     public static final Color BACKGROUND = new Color(240, 242, 245); // Bendras lango fonas (šviesiai pilkas)
     public static final Color ERROR = new Color(231, 76, 60);        // Klaidos / Ištrynimo mygtukai
     public static final Color SUCCESS = new Color(46, 204, 113);     // Sėkmės pranešimai / Patvirtinimai
