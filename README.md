@@ -182,7 +182,7 @@ operacijas, svorio matavimus, KMI ir TDEE skaičiavimų tikslumą, makroelement�
 valdymą, datos filtravimą žurnale bei pilnus integracinius scenarijus nuo įvedimo formos
 iki suvestinės.
 
-Detalūs testų rezultatai su kiekvieno testo aprašymu: [testu rezultatai.docx]
+Detalūs testų rezultatai su kiekvieno testo aprašymu: [testu rezultatai.docx](testo rezultatai.docx)
 
 Testų paleidimas:
 
