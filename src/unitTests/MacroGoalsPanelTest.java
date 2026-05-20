@@ -1,4 +1,4 @@
-package Test;
+package unitTests;
 
 import impl.MacroGoalDB;
 import impl.MealLogDB;
